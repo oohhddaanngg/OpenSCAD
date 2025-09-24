@@ -91,6 +91,8 @@ final_height   = dims[2];
 
 function clamp(x, lo, hi) = x < lo ? lo : (x > hi ? hi : x);
 
+eff_bottom_thickness = clamp(bottom_thickness, 0, final_height - 0.4);
+
 // ==============================
 // Geometry — Twisted Planter
 // ==============================
@@ -106,6 +108,9 @@ module wavy_planter(){
     z_steps = max(4, floor(final_height / (2 / detail_level)));
     a_steps = max(24, floor(max(final_top_d, final_bottom_d) * pi / (4 / detail_level)));
 
+    bottom_t     = eff_bottom_thickness;
+    inner_height = max(0.1, final_height - bottom_t);
+
     function base_r(zp) = (final_bottom_d/2) * (1 - zp) + (final_top_d/2) * zp;
 
     function wave_offset(a_deg, zp) =
@@ -118,27 +123,34 @@ module wavy_planter(){
 
     outer_count = (z_steps+1) * a_steps;
     inner_base  = outer_count;
+    inner_count = (z_steps+1) * a_steps;
 
-    points = concat(
-        // Outer surface (z 0..H)
-        [
-            for (z = [0:z_steps])
-                for (a = [0:a_steps-1])
-                    let(zp = z / z_steps,
-                        adeg = a * (360 / a_steps),
-                        r = rout(adeg, zp))
-                    [ r*cos(adeg), r*sin(adeg), zp * final_height ]
-        ],
-        // Inner surface (z H..0)
-        [
-            for (z = [z_steps:-1:0])
-                for (a = [0:a_steps-1])
-                    let(zp = z / z_steps,
-                        adeg = a * (360 / a_steps),
-                        r = rin(adeg, zp))
-                    [ r*cos(adeg), r*sin(adeg), zp * final_height ]
-        ]
-    );
+    outer_points = [
+        for (z = [0:z_steps])
+            for (a = [0:a_steps-1])
+                let(zp = z / z_steps,
+                    adeg = a * (360 / a_steps),
+                    r = rout(adeg, zp))
+                [ r*cos(adeg), r*sin(adeg), zp * final_height ]
+    ];
+
+    inner_points = [
+        for (z = [z_steps:-1:0])
+            for (a = [0:a_steps-1])
+                let(zp_raw = z / z_steps,
+                    inner_z = bottom_t + inner_height * zp_raw,
+                    zp = inner_z / final_height,
+                    adeg = a * (360 / a_steps),
+                    r = rin(adeg, zp))
+                [ r*cos(adeg), r*sin(adeg), inner_z ]
+    ];
+
+    bottom_points = [
+        [0,0,0],
+        [0,0,bottom_t]
+    ];
+
+    points = concat(outer_points, inner_points, bottom_points);
 
     // Build faces in four blocks and concat once.
     faces_outer = [
@@ -166,15 +178,23 @@ module wavy_planter(){
 
     outer_bottom_start = 0;
     inner_bottom_start = inner_base + z_steps*a_steps; // inner z reversed
+    bottom_outer_center = inner_base + inner_count;
+    bottom_inner_center = bottom_outer_center + 1;
 
-    faces_bottom_cap = [
+    faces_bottom_outer = [
         for (a = [0:a_steps-1])
             let(a2  = (a+1)%a_steps,
                 ob1 = outer_bottom_start + a,
-                ob2 = outer_bottom_start + a2,
+                ob2 = outer_bottom_start + a2)
+            [ ob2, ob1, bottom_outer_center ]
+    ];
+
+    faces_bottom_inner = [
+        for (a = [0:a_steps-1])
+            let(a2  = (a+1)%a_steps,
                 ib1 = inner_bottom_start + a,
                 ib2 = inner_bottom_start + a2)
-            [ [ob1, ob2, ib2], [ob1, ib2, ib1] ]
+            [ ib1, ib2, bottom_inner_center ]
     ];
 
     outer_top_start = z_steps*a_steps;
@@ -192,7 +212,7 @@ module wavy_planter(){
 
     polyhedron(
         points = points,
-        faces  = concat(faces_outer, faces_inner, faces_bottom_cap, faces_top_rim),
+        faces  = concat(faces_outer, faces_inner, faces_bottom_outer, faces_bottom_inner, faces_top_rim),
         convexity = 10
     );
 }
@@ -264,7 +284,7 @@ module planter_with_features(){
 
         if(drainage_holes)
             translate([0,0,-0.2])
-                linear_extrude(height=bottom_thickness + 0.6)
+                linear_extrude(height=eff_bottom_thickness + 0.6)
                     drainage_holes_pattern(final_bottom_d);
     }
 }
