@@ -1,303 +1,291 @@
-// Vase Mode Planter Generator — Twisted & Wavy v6.2 (manifold fix)
+// Planter Generator - Vase Mode v4.1.2
 // by Oohhddaanngg (MTin3D)
+// Spiral-vase planter bodies + standard saucer. Tuned for 0.8 mm vase mode.
+
+// ---------- Global Quality Controls ----------
+/* [Print Settings] */
+detail_level = 1.0;          // [0.6:0.1:1.4]
+bottom_thickness = 3;        // [2:0.5:5]
+base_fn = max(48, min(160, floor(64*detail_level)));
+$fn = base_fn; $fa = 6; $fs = 0.8;
 
 // ==============================
-// [1] Style Options
+// [1] Style Selection
 // ==============================
-/* [Style Options] */
-planter_style = "Wavy"; // [Twisted,Wavy]
-
-// -- Twisted Style --
-twist_amount = 60;                   // [20:1:360]
-twist_sides  = 6;                    // [6:1:64]
-
-// -- Wavy Style --
-wave_frequency = 12;                 // [3:1:30]
-wave_amplitude = 5;                  // [1:0.5:15]
-wave_twist = 60;                     // [0:5:360]
-wave_bulge = 4;                      // [0:0.5:15]
+/* [Style Selection] */
+planter_style = "Wave"; // [Twisted, Wave, Topographical]
 
 // ==============================
 // [2] Size Options
 // ==============================
 /* [Size Options] */
-size_preset = "Custom";
-// [Custom,Herb Pot (100mm),Succulent Bowl (80mm),Seedling Pot (102mm),Standard Pot (152mm),Large Pot (203mm),Orchid Pot (140mm),Cactus Planter (90mm)]
-top_diameter    = 120;               // [60:5:240]
-bottom_diameter = 80;                // [40:5:200]
-height          = 100;               // [50:5:250]
+size_preset = "Custom"; // [Custom, Herb Pot (100mm), Succulent Bowl (80mm), Seedling Pot (102mm), Standard Pot (152mm), Large Pot (203mm), Orchid Pot (140mm), Cactus Planter (90mm)]
+
+top_diameter = 120;   // [60:5:240]
+bottom_diameter = 80; // [40:5:200]
+height = 100;         // [50:5:250]
 
 // ==============================
-// [3] Drainage
+// [3] Twisted Style Settings
+// ==============================
+/* [Twisted Style Settings] */
+twist_amount = 60;  // [0:5:360]
+twist_sides  = 6;   // [3:1:24]
+
+// ==============================
+// [4] Wave Style Settings
+// ==============================
+/* [Wave Style Settings] */
+wave_count = 8;            // [4:1:20]
+wave_amplitude = 12;       // [5:1:25]  // percent of radius
+wave_vertical_freq = 0.5;  // [0:0.1:2]
+wave_spiral = true;
+wave_spiral_amount = 45;   // [0:5:180]
+
+// ==============================
+// [5] Topographical Style Settings
+// ==============================
+/* [Topographical Style Settings] */
+topo_layers = 20;          // [10:1:80]
+topo_variation = 15;       // [5:1:30] // percent of diameter
+topo_seed = 42;            // [1:1:999]
+topo_smoothness = 3;       // [1:1:5]  // integer steps for stability
+topo_spiral = false;
+topo_spiral_amount = 30;   // [0:5:90]
+
+// ==============================
+// [6] Drainage
 // ==============================
 /* [Drainage] */
-drainage_holes   = true;             // checkbox
-drainage_pattern = "Ring";           // [Center,Ring,Grid,Triangle,Auto]
-hole_diameter    = 8;                // [1:1:15]
-hole_count       = 5;                // [1:1:9]
-bottom_thickness = 3;                // [0.8:0.2:8]
+drainage_holes = true;
+drainage_pattern = "Ring"; // [Center, Ring, Grid, Triangle, Auto]
+hole_diameter = 8;         // [4:1:15]
+hole_count = 6;            // [1:1:25] // In Grid, total holes target
 
 // ==============================
-// [4] Saucer
+// [7] Saucer
 // ==============================
 /* [Saucer] */
-generate_saucer = true;              // checkbox
-saucer_height   = 15;                // [10:1:30]
-saucer_ribs     = true;              // checkbox
-saucer_rib_count   = 6;              // [4:1:12]
-saucer_rib_height  = 5;              // [1:0.5:10]
-saucer_wall_thickness  = 1.6;        // [0.8:0.1:3]
-saucer_floor_thickness = 1.2;        // [0.6:0.1:3]
-saucer_flare           = 2;          // [0:0.5:5]
-saucer_size_mode   = "Auto";         // [Auto,Manual]
-saucer_gap         = 5;              // [0:0.5:10]
-saucer_rim         = 5;              // [0:0.5:10]
-saucer_gap_target  = 3;              // [2.5:0.5:5]
-saucer_rim_target  = 2.5;            // [1.5:0.5:5]
-saucer_flare_target= 0.5;            // [0:0.5:2]
+generate_saucer = true;
+saucer_height = 15;           // [10:1:30]
+saucer_wall_thickness = 1.6;  // [1.2:0.1:3]
+saucer_floor_thickness = 1.2; // [0.8:0.1:3]
+saucer_gap = 3;               // [2:0.5:10]
+saucer_rim = 3;               // [2:0.5:10]
+
+// Saucer details
+saucer_ribs = true;
+saucer_rib_count = 6;   // [4:1:12]
+saucer_rib_height = 5;  // [2:0.5:10]
 
 // ==============================
-// [5] Export
+// [8] Export Options
 // ==============================
-/* [Export] */
-export_mode = "Both Together";       // [Planter Only,Saucer Only,Both Together]
+/* [Export Options] */
+export_mode = "Both Together"; // [Planter Only, Saucer Only, Both Together]
 
-// ==============================
-// Advanced & Hidden
-// ==============================
-detail_level = 1.0;                  // [0.6:0.1:1.4]
-$fn = 96; $fa = 6; $fs = 0.8;
+// ---------- Helpers ----------
+function clampv(x,a,b) = min(max(x,a), b);
 
-// Thin shell thickness for vase-style prints (set ~ nozzle width)
-wall_thickness = 1.2;                // [0.8:0.1:3]
+// Safe pseudo-random based on integers only (repeatable)
+function prand(seed, idx) = ((seed*9301 + idx*49297) % 233280) / 233280;
 
-// ==============================
-// Derived dims & helpers
-// ==============================
-function get_preset_dims(preset) =
-    preset=="Herb Pot (100mm)"     ? [100,70,90]  :
-    preset=="Succulent Bowl (80mm)"? [80,65,50]   :
-    preset=="Seedling Pot (102mm)" ? [102,75,100] :
-    preset=="Standard Pot (152mm)" ? [152,100,140]:
-    preset=="Large Pot (203mm)"    ? [203,140,180]:
-    preset=="Orchid Pot (140mm)"   ? [140,90,160] :
-    preset=="Cactus Planter (90mm)"? [90,70,110]  :
-    [top_diameter,bottom_diameter,height];
+// Presets
+function get_preset_dims(p) =
+    p=="Herb Pot (100mm)"       ? [100, 70, 90]  :
+    p=="Succulent Bowl (80mm)"  ? [80, 65, 50]   :
+    p=="Seedling Pot (102mm)"   ? [102, 75, 100] :
+    p=="Standard Pot (152mm)"   ? [152, 100, 140]:
+    p=="Large Pot (203mm)"      ? [203, 140, 180]:
+    p=="Orchid Pot (140mm)"     ? [140, 90, 160] :
+    p=="Cactus Planter (90mm)"  ? [90, 70, 110]  :
+    [top_diameter, bottom_diameter, height];
 
 dims = get_preset_dims(size_preset);
-final_top_d    = dims[0];
+final_top_d = dims[0];
 final_bottom_d = dims[1];
-final_height   = dims[2];
+final_height = dims[2];
 
-function clamp(x, lo, hi) = x < lo ? lo : (x > hi ? hi : x);
-
-eff_bottom_thickness = clamp(bottom_thickness, 0, final_height - 0.4);
-
-// ==============================
-// Geometry — Twisted Planter
-// ==============================
-module twisted_planter(){
-    linear_extrude(height=final_height, twist=twist_amount, scale=final_top_d/final_bottom_d)
-        offset(r=3) offset(r=-3) circle(d=final_bottom_d, $fn=twist_sides);
+// ---------- Styles ----------
+module twisted_planter() {
+    scale_ratio = final_top_d / final_bottom_d;
+    linear_extrude(height=final_height, twist=twist_amount, scale=scale_ratio)
+        offset(r=3) offset(r=-3)
+        circle(d=final_bottom_d, $fn=twist_sides);
 }
 
-// ==============================
-// Geometry — Wavy Planter (manifold)
-// ==============================
-module wavy_planter(){
-    z_steps = max(4, floor(final_height / (2 / detail_level)));
-    a_steps = max(24, floor(max(final_top_d, final_bottom_d) * pi / (4 / detail_level)));
+module wave_planter() {
+    // slices & angular samples are integers only
+    slices = clampv( round(30*detail_level*(1 + wave_vertical_freq)), 24, 160 );
+    a_count = base_fn;  // angular resolution
 
-    bottom_t     = eff_bottom_thickness;
-    inner_height = max(0.1, final_height - bottom_t);
+    for (i = [0:slices-1]) {
+        z0 = i * final_height / slices;
+        z1 = (i+1) * final_height / slices;
+        h_seg = (z1 - z0) + 0.01;
 
-    function base_r(zp) = (final_bottom_d/2) * (1 - zp) + (final_top_d/2) * zp;
+        // base diameter at this slice (linear taper)
+        base_d = final_bottom_d + (final_top_d - final_bottom_d) * (z0 / final_height);
 
-    function wave_offset(a_deg, zp) =
-        wave_amplitude * sin(a_deg * wave_frequency + zp * wave_twist) +
-        wave_bulge     * sin(zp * 180 * (floor(wave_bulge > 0 ? 2 : 0) + 1));
+        // precompute spiral/vertical terms
+        spiral_term = wave_spiral ? (z0 * wave_spiral_amount / final_height) : 0;
+        vterm = z0 * wave_vertical_freq * 360 / final_height;
 
-    function rout(a_deg, zp) = base_r(zp) + wave_offset(a_deg, zp);
-    function rin(a_deg, zp)  = clamp(rout(a_deg, zp) - wall_thickness,
-                                     wall_thickness*0.25, rout(a_deg, zp) - 0.2);
+        // build polygon points
+        pts = [
+            for (t = [0:a_count-1]) 
+                let(a = t * 360 / a_count)
+                let(phase = a*wave_count + spiral_term + vterm)
+                let(off = sin(phase) * (wave_amplitude/100))
+                let(r = (base_d/2) * (1 + off))
+                [ r*cos(a), r*sin(a) ]
+        ];
 
-    outer_count = (z_steps+1) * a_steps;
-    inner_base  = outer_count;
-    inner_count = (z_steps+1) * a_steps;
-
-    outer_points = [
-        for (z = [0:z_steps])
-            for (a = [0:a_steps-1])
-                let(zp = z / z_steps,
-                    adeg = a * (360 / a_steps),
-                    r = rout(adeg, zp))
-                [ r*cos(adeg), r*sin(adeg), zp * final_height ]
-    ];
-
-    inner_points = [
-        for (z = [z_steps:-1:0])
-            for (a = [0:a_steps-1])
-                let(zp_raw = z / z_steps,
-                    inner_z = bottom_t + inner_height * zp_raw,
-                    zp = inner_z / final_height,
-                    adeg = a * (360 / a_steps),
-                    r = rin(adeg, zp))
-                [ r*cos(adeg), r*sin(adeg), inner_z ]
-    ];
-
-    bottom_points = [
-        [0,0,0],
-        [0,0,bottom_t]
-    ];
-
-    points = concat(outer_points, inner_points, bottom_points);
-
-    // Build faces in four blocks and concat once.
-    faces_outer = [
-        for (z = [0:z_steps-1])
-            for (a = [0:a_steps-1])
-                let(a2 = (a+1)%a_steps,
-                    p1 = z*a_steps + a,
-                    p2 = z*a_steps + a2,
-                    p3 = (z+1)*a_steps + a,
-                    p4 = (z+1)*a_steps + a2)
-                [ [p1,p2,p4], [p1,p4,p3] ]
-    ];
-
-    faces_inner = [
-        for (z = [0:z_steps-1])
-            for (a = [0:a_steps-1])
-                let(a2 = (a+1)%a_steps,
-                    ip1 = inner_base + z*a_steps + a,
-                    ip2 = inner_base + z*a_steps + a2,
-                    ip3 = inner_base + (z+1)*a_steps + a,
-                    ip4 = inner_base + (z+1)*a_steps + a2)
-                // reversed winding to keep normals outward
-                [ [ip1,ip4,ip2], [ip1,ip3,ip4] ]
-    ];
-
-    outer_bottom_start = 0;
-    inner_bottom_start = inner_base + z_steps*a_steps; // inner z reversed
-    bottom_outer_center = inner_base + inner_count;
-    bottom_inner_center = bottom_outer_center + 1;
-
-    faces_bottom_outer = [
-        for (a = [0:a_steps-1])
-            let(a2  = (a+1)%a_steps,
-                ob1 = outer_bottom_start + a,
-                ob2 = outer_bottom_start + a2)
-            [ ob2, ob1, bottom_outer_center ]
-    ];
-
-    faces_bottom_inner = [
-        for (a = [0:a_steps-1])
-            let(a2  = (a+1)%a_steps,
-                ib1 = inner_bottom_start + a,
-                ib2 = inner_bottom_start + a2)
-            [ ib1, ib2, bottom_inner_center ]
-    ];
-
-    outer_top_start = z_steps*a_steps;
-    inner_top_start = inner_base;
-
-    faces_top_rim = [
-        for (a = [0:a_steps-1])
-            let(a2  = (a+1)%a_steps,
-                ot1 = outer_top_start + a,
-                ot2 = outer_top_start + a2,
-                it1 = inner_top_start + a,
-                it2 = inner_top_start + a2)
-            [ [ot1, it2, ot2], [ot1, it1, it2] ]
-    ];
-
-    polyhedron(
-        points = points,
-        faces  = concat(faces_outer, faces_inner, faces_bottom_outer, faces_bottom_inner, faces_top_rim),
-        convexity = 10
-    );
+        translate([0,0,z0])
+            linear_extrude(height=h_seg)
+                polygon(points=pts);
+    }
 }
 
-// ==============================
-// Drainage
-// ==============================
-module drainage_holes_pattern(d_bot){
-    if(drainage_pattern=="Center") {
+module topographical_planter() {
+    layers = min(topo_layers, 120);
+    layer_h = final_height / layers;
+
+    for (i = [0:layers-1]) {
+        z = i * layer_h;
+
+        // base diameter at this band
+        base_d = final_bottom_d + (final_top_d - final_bottom_d) * (i / layers);
+
+        // integer-tap smoothing: taps at 0..(3*topo_smoothness) in steps of topo_smoothness
+        taps = 3; // fixed three taps for simplicity
+        sum = 0;
+        for (k = [0:taps]) {
+            j = k * topo_smoothness;                  // integer step
+            w = 1 / (j/topo_smoothness + 1);          // weights: 1, 1/2, 1/3, 1/4 …
+            sum = sum + prand(topo_seed + j, i) * w;
+        }
+        norm = sum / 2; // roughly normalize to 0..1
+        current_d = base_d * (1 + (norm - 0.5) * (topo_variation/100));
+
+        rot = topo_spiral ? (i * topo_spiral_amount / layers) : 0;
+
+        translate([0,0,z])
+            rotate([0,0,rot])
+                linear_extrude(height=layer_h + 0.01)
+                    offset(r=1) offset(r=-1)
+                        circle(d=current_d, $fn=base_fn);
+    }
+}
+
+// ---------- Main body selector ----------
+module planter_body() {
+    if (planter_style == "Twisted") {
+        twisted_planter();
+    } else if (planter_style == "Wave") {
+        wave_planter();
+    } else { // Topographical
+        topographical_planter();
+    }
+}
+
+// ---------- Drainage patterns ----------
+module drainage_holes_pattern(d_bot) {
+    if (drainage_pattern == "Center") {
         circle(d=hole_diameter);
-    } else if(drainage_pattern=="Ring" || drainage_pattern=="Auto"){
-        safe = min(hole_count, max(3, floor(3.14159*d_bot/3/hole_diameter)));
-        cnt  = (drainage_pattern=="Auto") ? safe : hole_count;
-        for(i=[0:cnt-1]) rotate(i*360/cnt) translate([d_bot/4,0]) circle(d=hole_diameter);
-    } else if(drainage_pattern=="Grid"){
-        for(x=[-1:1]) for(y=[-1:1])
-            if(!(x==0&&y==0) || (hole_count%2==1))
-                translate([x*d_bot/6,y*d_bot/6]) circle(d=hole_diameter);
-    } else if(drainage_pattern=="Triangle"){
-        for(i=[0:2]) rotate(i*120) translate([d_bot/5,0]) circle(d=hole_diameter);
-    }
-}
-
-// ==============================
-// Saucer
-// ==============================
-module saucer_standard(d_bot){
-    use_auto  = (saucer_size_mode=="Auto");
-    eff_gap   = use_auto ? saucer_gap_target   : saucer_gap;
-    eff_rim   = use_auto ? saucer_rim_target   : saucer_rim;
-    eff_flare = use_auto ? saucer_flare_target : saucer_flare;
-
-    inner_d1 = d_bot + eff_gap;
-    outer_d1 = inner_d1 + 2*(eff_rim + saucer_wall_thickness);
-    outer_d2 = outer_d1 + 2*eff_flare;
-    inner_d2 = outer_d2 - 2*saucer_wall_thickness;
-
-    difference(){
-        cylinder(h=saucer_height, d1=outer_d1, d2=outer_d2);
-        translate([0,0,saucer_floor_thickness])
-            cylinder(h=saucer_height, d1=inner_d1, d2=inner_d2);
-    }
-    if(saucer_ribs){
-        inner_r = inner_d1/2; rib_end_r = inner_r - 2;
-        for(i=[0:saucer_rib_count-1]){
-            rotate(i*360/saucer_rib_count)
-                translate([0,0,saucer_floor_thickness]) hull(){
-                    cylinder(h=saucer_rib_height,r=1.6);
-                    translate([rib_end_r,0,0]) cylinder(h=saucer_rib_height,r=1.6);
-                }
+    } else if (drainage_pattern == "Ring" || drainage_pattern == "Auto") {
+        // ring count heuristic; Auto clamps to safe_count
+        perim = 3.14159 * d_bot;
+        safe_count = min(hole_count, max(3, floor(perim / (3*hole_diameter))));
+        cnt = (drainage_pattern == "Auto") ? safe_count : hole_count;
+        for (i = [0:cnt-1]) {
+            rotate(i * 360/cnt)
+                translate([d_bot/4, 0])
+                    circle(d=hole_diameter);
+        }
+    } else if (drainage_pattern == "Grid") {
+        // Use hole_count as TOTAL holes in a centered grid
+        n = ceil(sqrt(hole_count));
+        span = d_bot/3;
+        step = (n <= 1) ? 0 : (span/(n-1));
+        for (k = [0:hole_count-1]) {
+            ix = floor(k % n);
+            iy = floor(k / n);
+            cx = (ix - (n-1)/2) * step;
+            cy = (iy - (n-1)/2) * step;
+            translate([cx, cy]) circle(d=hole_diameter);
+        }
+    } else { // Triangle
+        for (i = [0:2]) {
+            rotate(i * 120)
+                translate([d_bot/5, 0])
+                    circle(d=hole_diameter);
         }
     }
 }
 
-// ==============================
-// Assembly & Export
-// ==============================
-module planter_solid(){
-    if (planter_style == "Twisted") {
-        twisted_planter();
-    } else {
-        wavy_planter();
-    }
-}
-
-module planter_with_features(){
-    difference(){
-        planter_solid();
-
-        if(drainage_holes)
-            translate([0,0,-0.2])
-                linear_extrude(height=eff_bottom_thickness + 0.6)
+// ---------- Complete planter with drainage subtraction ----------
+module planter_with_features() {
+    difference() {
+        planter_body();
+        if (drainage_holes) {
+            translate([0, 0, -0.1])
+                linear_extrude(height=bottom_thickness + 0.2)
                     drainage_holes_pattern(final_bottom_d);
+        }
     }
 }
 
-function eff_space() =
-    (saucer_size_mode=="Auto" ? saucer_gap_target + saucer_rim_target
-                              : saucer_gap + saucer_rim) + 20;
+// ---------- Saucer ----------
+module saucer_standard(d_bot) {
+    inner_d1 = d_bot + saucer_gap;
+    outer_d1 = inner_d1 + 2 * (saucer_rim + saucer_wall_thickness);
 
-if(export_mode=="Planter Only"){
+    difference() {
+        cylinder(h=saucer_height, d=outer_d1, $fn=base_fn);
+        translate([0, 0, saucer_floor_thickness])
+            cylinder(h=saucer_height, d=inner_d1, $fn=base_fn);
+    }
+
+    if (saucer_ribs) {
+        inner_r = inner_d1/2;
+        rib_end_r = max(1.2, inner_r - 3);
+        for (i = [0:saucer_rib_count-1]) {
+            rotate(i * 360/saucer_rib_count)
+                translate([0, 0, saucer_floor_thickness])
+                    hull() {
+                        cylinder(h=saucer_rib_height, r=1.6);
+                        translate([rib_end_r, 0, 0]) cylinder(h=saucer_rib_height, r=1.6);
+                    }
+        }
+    }
+}
+
+// ---------- Export assembly ----------
+spacing = final_bottom_d + saucer_gap + saucer_rim + 20;
+
+if (export_mode == "Planter Only") {
     planter_with_features();
-} else if(export_mode=="Saucer Only"){
-    if(generate_saucer) saucer_standard(final_bottom_d);
+} else if (export_mode == "Saucer Only") {
+    if (generate_saucer) { saucer_standard(final_bottom_d); }
 } else { // Both Together
     planter_with_features();
-    if(generate_saucer) translate([final_bottom_d + eff_space(),0,0]) saucer_standard(final_bottom_d);
+    if (generate_saucer) {
+        translate([spacing, 0, 0]) saucer_standard(final_bottom_d);
+    }
 }
+
+// ---------- Validation & printability echoes ----------
+if (final_top_d <= 0 || final_bottom_d <= 0 || final_height <= 0) {
+    echo("ERROR: All dimensions must be positive");
+}
+if (bottom_thickness < 2) {
+    echo("Warning: Bottom thickness < 2mm may be fragile");
+}
+if (saucer_wall_thickness < 1.2) {
+    echo("Warning: Saucer wall thickness < 1.2mm may be fragile with FDM.");
+}
+if (wave_amplitude > 20 && wave_count >= 12) {
+    echo("Warning: Aggressive Wave settings (amplitude>20% & count>=12) may create >55° overhangs near the base.");
+}
+echo("Info: Planter body is for SPIRAL VASE mode (0.8 mm nozzle OK). Slicer bottom layers form the base; cut depth used for holes = ", bottom_thickness, " mm.");
