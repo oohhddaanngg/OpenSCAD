@@ -36,8 +36,9 @@ twist_sides  = 6;   // [3:1:24]
 // [4] Wave Style Settings
 // ==============================
 /* [Wave Style Settings] */
-wave_count = 8;            // [4:1:20]
-wave_amplitude = 12;       // [5:1:25]  // percent of radius
+wave_count = 8;            // [2:1:20]
+wave_amplitude = 12;       // [5:1:24]  
+// percent of radius
 wave_vertical_freq = 0.5;  // [0:0.1:2]
 wave_spiral = true;
 wave_spiral_amount = 45;   // [0:5:180]
@@ -68,10 +69,10 @@ hole_count = 6;            // [1:1:25] // In Grid, total holes target
 /* [Saucer] */
 generate_saucer = true;
 saucer_height = 15;           // [10:1:30]
-saucer_wall_thickness = 1.6;  // [1.2:0.1:3]
-saucer_floor_thickness = 1.2; // [0.8:0.1:3]
+saucer_wall_thickness = 1.0;  // [0.5:0.1:3]
+saucer_floor_thickness = 1.0; // [0.8:0.1:3]
 saucer_gap = 3;               // [2:0.5:10]
-saucer_rim = 3;               // [2:0.5:10]
+saucer_rim = 1;               // [0.5:0.5:5]
 
 // Saucer details
 saucer_ribs = true;
