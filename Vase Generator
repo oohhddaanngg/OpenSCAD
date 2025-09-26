@@ -1,144 +1,93 @@
-// Helical Wave Vase Generator v1.0
+// Vase Generator – Sine Wave (Solid Body) v1.2
 // by Oohhddaanngg (MTin3D)
-// Purpose: Elegant vase with optional helical sine-wave texture, tapered silhouette, and vase-mode friendly continuous skin.
-// Notes: Designed for FDM printers; supports true vase mode or thin 2-wall prints. All dimensions in millimeters.
+// Strategy: Solid-body extrusion (no inner subtraction). Slice with Spiral/Vase mode ON.
+// Watertight bottom comes from slicer bottom layers; top is open (Top layers = 0).
 
-$fa = 6;                    // angular resolution helper (kept moderate for performance)
-$fs = 0.8;                  // segment length helper (balances speed/detail)
-base_fn_default = 96;       // fallback if detail slider isn't used
+// ---------- Global Quality Controls ----------
+/* [Print Settings] */
+// Higher = more polygons, which means smoother curves and cleaner twist transitions
+detail_level = 1.6;          // [0.6:0.1:3.0] Geometry detail scaler
+// Thickness in mm for the solid base, 3.0+ recommended for water-tightness
+bottom_thickness = 3.6;      // [0.8:0.2:5.6] 
+
+base_fn = max(48, min(160, floor(64*detail_level)));
+$fn = base_fn; $fa = 6; $fs = 0.8;
 
 // ==============================
-// [Mode / Export]
+// [Style Selection]
 // ==============================
-/* [Export Options] */
-// Choose which part to render/export
-export_mode = "Main Only";  // [Main Only]
-// Enable true vase mode (single perimeter in slicer). When OFF, wall must be ≥1.2 mm.
-vase_mode = true;           // [true:false]
+/* [Style Selection] */
+style = "Sine Wave";  // [Sine Wave] Reserved for future styles
 
 // ==============================
 // [Dimensions]
 // ==============================
 /* [Dimensions] */
-// Total vase height
-vase_h = 210;               // [120:1:320]
-// Bottom outside diameter
-d_bot = 80;                 // [50:1:150]
-// Top outside diameter (before pattern modulation)
-d_top = 110;                // [60:1:200]
-// Wall thickness at base profile (model space; slicer perimeter should match)
-wall_thickness = 0.9;       // [0.6:0.1:2.4]
-// Solid bottom thickness (not perimeter; slicer bottom layers should be ≥ this)
-bottom_thickness = 1.2;     // [0.6:0.2:3.0]
-// Overall taper curvature (0 = straight linear taper, 1 = softer S-curve)
-profile_curvature = 0.35;   // [0:0.05:1.0]
+// Height in mm
+vase_h = 210;                // [120:1:320]
+// Bottom outside diameter in mm
+d_bot  = 80;                 // [50:1:200]
+// Top outside diameter in mm, before wave modulation
+d_top  = 110;                // [60:1:240]
+// Curvature: 0 = linear taper, 1 = smooth S-curve
+profile_curvature = 0.35;    // [0:0.05:1.0]
 
 // ==============================
-// [Style]
+// [Sine Wave Style Settings]
 // ==============================
-/* [Style] */
-// Surface style (Smooth = no waves; Sine Wave = organic undulations)
-style = "Sine Wave";        // [Smooth, Sine Wave]
-// Wave amplitude as fraction of local radius (e.g., 0.06 = ±6%)
-wave_amp_frac = 0.06;       // [0:0.005:0.12]
-// Number of lobes around (frequency)
-wave_count = 12;            // [0:1:48]
-// Helical twist over full height (degrees). 0 = vertical waves; positive = right-hand twist.
-twist_deg = 240;            // [0:5:720]
-// Phase offset of the wave (degrees)
-wave_phase_deg = 0;         // [0:5:360]
+/* [Sine Wave Style Settings] */
+// Depth of lobes in %, higher = more dramatic undulation (0–12% recommended)
+wave_amplitude = 6;          // [0:1:20]
+// Number of waves around circumference
+wave_count = 12;             // [1:1:48]
+// Rotates the wave pattern from base to rim, in degrees: 0 = vertical waves
+twist_deg = 240;             // [0:5:720]
+// Rotates the lobe alignment at the base, in degrees
+wave_phase_deg = 0;          // [0:5:360]
 
 // ==============================
-// [Performance / Detail]
+// [Export Options]
 // ==============================
-/* [Performance] */
-// Polygon detail scaler: 1=coarse, 2=medium, 3=high, 4=ultra
-detail_level = 2;           // [1:1:4]
-// Extrusion slices along Z (higher—cleaner twist/scale transitions)
-slices = 160;               // [64:8:240]
+/* [Export Options] */
+export_mode = "Vase Only";   // [Vase Only]
 
-// ==============================
-// Derived / Helpers
-// ==============================
-r_bot = d_bot/2;
-r_top = d_top/2;
-taper = r_top - r_bot;           // positive widens toward top, negative narrows
-top_scale = (r_top>0 && r_bot>0) ? (r_top/r_bot) : 1;
-_amp = (style=="Sine Wave") ? wave_amp_frac : 0;  // 0 for Smooth
-
-fn_scale = [64, 96, 128, 160][clamp(detail_level-1,0,3)];
-$fn = max(base_fn_default, fn_scale);
-
-// simple clamp helper
-function clamp(x, lo, hi) = min(hi, max(lo, x));
-
-// normed easing for vertical profile (0..1 -> 0..1), mixes linear with smoothstep
+// ---------- Helpers ----------
+function clamp(x,a,b) = min(max(x,a), b);
 function smooth01(t) = t*t*(3-2*t);
-function profile_ease(t, c) = (1-c)*t + c*smooth01(t);
+function profile_ease(t,c) = (1-c)*t + c*smooth01(t);
 
-// base radius at height z (0..vase_h)
-function radius_at_z(z) =
-    let (t = clamp(z/vase_h,0,1))
-    r_bot + taper * profile_ease(t, profile_curvature);
-
-// Generate 2D polar points for a waved ring
-// n: point count, R: base radius, amp: fraction, k: wave_count, ph: phase(deg), r_in: inner radius (R - wall)
-function wave_pt(i, n, R, amp, k, ph) =
-    let (ang = 360*i/n)
-    let (rw = R * (1 + amp * (k>0 ? sin(k*ang + ph) : 0)))
-    [ rw*cos(ang), rw*sin(ang) ];
-
-// 2D ring with matching inner wave so wall is (approximately) uniform
-module wave_ring(R, w, amp, k, ph, n_pts= max(48, $fn)) {
-    R_out = R;
-    R_in  = max(0.1, R - w);
-    // Outer loop
-    outer = [ for (i=[0:n_pts-1]) wave_pt(i, n_pts, R_out, amp, k, ph) ];
-    // Inner loop (reverse winding)
-    inner = [ for (i=[n_pts-1:-1:0]) wave_pt(i, n_pts, R_in,  amp, k, ph) ];
-    polygon(points = concat(outer, inner));
+// 2D waved footprint (OUTER outline only)
+module footprint_wave(d){
+    n = $fn;
+    amp_frac = wave_amplitude/100;
+    pts = [
+        for (i=[0:n-1]) let(
+            a = i*360/n,
+            r = (d/2) * (1 + amp_frac * sin(wave_count*a + wave_phase_deg))
+        ) [ r*cos(a), r*sin(a) ]
+    ];
+    polygon(points=pts);
 }
 
-// 3D vase shell by linear_extrude a waved ring, with twist and scale for taper
-module vase_body() {
-    // Use the base (z=0) radius to build the ring; scaling during extrude makes the taper.
-    // We also vary wave amplitude with height implicitly via scale; optional z-damping could be added.
-    // Important: union() gives a single continuous skin for slicers to treat as vase-mode friendly.
-    union() {
-        // Shell
-        linear_extrude(height = vase_h, twist = twist_deg, slices = slices, scale = top_scale, convexity=10)
-            wave_ring(R = r_bot, w = wall_thickness,
-                      amp = _amp, k = wave_count, ph = wave_phase_deg, n_pts=$fn);
-
-        // Bottom cap (kept thin; slicer can add bottom layers >= this)
-        translate([0,0,0])
-            cylinder(h = bottom_thickness, r = max(0, r_bot - wall_thickness), $fn=$fn);
-    }
+// Main solid body (single extrude). Taper via scale, helix via twist.
+module vase_body_solid(){
+    scale_ratio = d_top / d_bot;
+    // Slices scaled with detail to keep twist/taper clean
+    slices = max(96, floor(160*detail_level));
+    linear_extrude(height=vase_h, twist=twist_deg, scale=scale_ratio, slices=slices, convexity=10)
+        footprint_wave(d_bot);
 }
 
-// Safety & Info echoes
-module echoes() {
-    // Wall safety (unless true vase mode)
-    if (!vase_mode && wall_thickness < 1.2)
-        echo("Warning: wall_thickness < 1.2 mm while vase_mode is OFF. Increasing to 1.2 mm is recommended.");
-
-    if (vase_mode && wall_thickness > 1.0)
-        echo("Info: For true vase mode, set wall_thickness near your nozzle width (e.g., 0.8–1.0 mm). Current:", wall_thickness);
-
-    // Overhang hint near base with strong waves
-    local_overhang_risk = (_amp>0.08 && wave_count>18 && twist_deg>360);
-    if (local_overhang_risk)
-        echo("Hint: High wave_amp + high wave_count + large twist may create steep local overhangs near the base. Consider reducing one.");
-
-    // Slicer recipe hint
-    if (vase_mode)
-        echo("Slicer: Spiral/Adaptive Vase ON, Top layers 0, Bottom layers to achieve ≥", bottom_thickness, "mm, Perimeter width ≈", wall_thickness, "mm.");
-    else
-        echo("Slicer: Spiral Vase OFF, Walls ≥ 2 perimeters, Top layers ≥ 3, Bottom layers to achieve ≥", bottom_thickness, "mm.");
+// ---------- Render / Export ----------
+if (export_mode == "Vase Only") {
+    color([0.85,0.89,0.95]) vase_body_solid();
 }
 
-// MAIN
-if (export_mode == "Main Only") {
-    color([0.85,0.89,0.95]) render() vase_body();
-    echoes();
-}
+// ---------- Validation & printability echoes ----------
+if (vase_h <= 0 || d_bot <= 0 || d_top <= 0) echo("ERROR: All dimensions must be positive.");
+if (wave_amplitude > 10 && wave_count >= 24 && twist_deg > 360)
+    echo("Warning: Aggressive wave+count+twist may create steep local overhangs near the base.");
+
+echo("Info: Solid-body vase for SPIRAL/ADAPTIVE VASE mode.");
+echo(str("Hint: Top layers = 0. Bottom layers to reach ≥ ", bottom_thickness, " mm."));
+echo("Tip: Set line width ≈ nozzle width (e.g., 0.8–1.0 mm with a 0.8 mm nozzle).");
