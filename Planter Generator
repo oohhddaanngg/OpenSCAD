@@ -1,11 +1,14 @@
-// Planter Generator - Vase Mode v4.1.4
+// Planter Generator - Vase Mode v4.2.3
 // by Oohhddaanngg (MTin3D)
-// Purpose: Spiral-vase planter bodies + standard saucer. Tuned for 0.8 mm vase mode.
+// Spiral-vase planter bodies + round/conformal saucers. Tuned for 0.8 mm vase mode.
 
 // ---------- Global Quality Controls ----------
 /* [Print Settings] */
-detail_level = 1.0;          // [0.6:0.1:1.4]
-bottom_thickness = 3;        // [2:0.5:5]
+// Polygon/detail multiplier (higher = smoother, slower)
+detail_level = 1.0; // [0.6:0.1:1.4]
+// Slicer bottom layers should sum to this thickness
+bottom_thickness = 3; // [2:0.5:5]
+
 base_fn = max(48, min(160, floor(64*detail_level)));
 $fn = base_fn; $fa = 6; $fs = 0.8;
 
@@ -13,93 +16,130 @@ $fn = base_fn; $fa = 6; $fs = 0.8;
 // [1] Style Selection
 // ==============================
 /* [Style Selection] */
+// Choose planter body style
 planter_style = "Wave"; // [Twisted, Wave, Topographical]
 
 // ==============================
 // [2] Size Options
 // ==============================
 /* [Size Options] */
-size_preset = "Custom"; // [Custom, Herb Pot (100mm), Succulent Bowl (80mm), Seedling Pot (102mm), Standard Pot (152mm), Large Pot (203mm), Orchid Pot (140mm), Cactus Planter (90mm)]
+// Pick preset (Top x Height, base). Custom lets you set all dims.
+size_preset = "Custom"; // [Custom, Herb Pot (Top100 x H90, base70), Succulent Bowl (Top80 x H50, base65), Seedling Pot (Top102 x H100, base75), Standard Pot (Top152 x H140, base100), Large Pot (Top203 x H180, base140), Orchid Pot (Top140 x H160, base90), Cactus Planter (Top90 x H110, base70)]
 
-top_diameter = 120;   // [60:5:240]
+// Top outside diameter (mm)
+top_diameter = 120; // [60:5:240]
+// Bottom outside diameter (mm)
 bottom_diameter = 80; // [40:5:200]
-height = 100;         // [50:5:250]
+// Overall height (mm)
+height = 100; // [50:5:250]
 
 // ==============================
 // [3] Twisted Style Settings
 // ==============================
 /* [Twisted Style Settings] */
-twist_amount = 60;   // [0:5:360]
-twist_sides  = 6;    // [3:1:24]
-twist_rounding = 3;  // [0:0.5:4]  vertex rounding via offset trick
+// Twist (deg) over full height
+twist_amount = 60; // [0:5:360]
+// Base polygon sides (lower = chunkier lobes)
+twist_sides = 6; // [3:1:24]
+// Vertex rounding at polygon corners (mm)
+twist_rounding = 3; // [0:0.5:4]
 
 // ==============================
 // [4] Wave Style Settings
 // ==============================
 /* [Wave Style Settings] */
-wave_count = 8;            // [2:1:20]
-wave_amplitude = 12;       // [5:1:24]  // percent of radius
-wave_vertical_freq = 0.5;  // [0:0.1:2]
-wave_spiral = true;
-wave_spiral_amount = 45;   // [0:5:180]
+// Lobes around the planter
+wave_count = 8; // [2:1:20]
+// Amplitude as % of radius
+wave_amplitude = 12; // [5:1:24]
+// Vertical variation factor
+wave_vertical_freq = 0.5; // [0:0.1:2]
+// Add helical drift
+wave_spiral = true; // [true, false]
+// Drift amount (deg)
+wave_spiral_amount = 45; // [0:5:180]
 
 // ==============================
 // [5] Topographical Style Settings
 // ==============================
 /* [Topographical Style Settings] */
-topo_layers = 20;          // [10:1:80]
-topo_variation = 15;       // [5:1:30] // percent of diameter
-topo_seed = 42;            // [1:1:999]
-topo_smoothness = 3;       // [1:1:5]  // integer steps for stability
-topo_spiral = false;
-topo_spiral_amount = 30;   // [0:5:90]
+// Number of organic bands (layers)
+topo_layers = 20; // [10:1:80]
+// Variation as % of diameter
+topo_variation = 15; // [5:1:30]
+// Noise seed
+topo_seed = 42; // [1:1:999]
+// Integer step for weighting (coarse→fine)
+topo_smoothness = 3; // [1:1:5]
+// Add slow spiral
+topo_spiral = false; // [true, false]
+// Spiral amount (deg)
+topo_spiral_amount = 30; // [0:5:90]
 
 // ==============================
 // [6] Drainage
 // ==============================
 /* [Drainage] */
-drainage_holes = true;
+// Cut drainage through slicer-made bottom
+drainage_holes = true; // [true, false]
+// Pattern (Auto clamps ring count safely)
 drainage_pattern = "Ring"; // [Center, Ring, Grid, Triangle, Auto]
-hole_diameter = 8;         // [4:1:15]
-hole_count = 6;            // [1:1:25] // For Grid: target total
+// Hole diameter (mm)
+hole_diameter = 8; // [4:1:15]
+// In Grid: target total holes; Ring: count
+hole_count = 6; // [1:1:25]
 
 // ==============================
 // [7] Saucer
 // ==============================
 /* [Saucer] */
-generate_saucer = true;
-saucer_height = 15;           // [10:1:30]
-saucer_wall_thickness = 1.2;  // [1.0:0.1:3]
+// Match planter footprint (true) or use round saucer (false)
+saucer_match_shape = true; // [true, false]
+// Saucer wall height (mm)
+saucer_height = 15; // [10:1:30]
+// Saucer wall thickness (mm)
+saucer_wall_thickness = 1.2; // [1.0:0.1:3]
+// Saucer floor thickness (mm)
 saucer_floor_thickness = 1.2; // [1.0:0.1:3]
-saucer_gap = 3;               // [2:0.5:10]
-saucer_rim = 1;               // [0.5:0.5:5]
+// Clearance between planter and saucer (mm)
+saucer_gap = 3; // [2:0.5:10]
+// Extra vertical lip height (mm)
+saucer_rim = 1; // [0.5:0.5:5]
+
+// Master switch for generating the saucer (used by Export Options)
+generate_saucer = true; // [true, false]
+
 
 /* [Saucer Details] */
-saucer_ribs = true;
-saucer_rib_count = 6;   // [4:1:12]
-saucer_rib_height = 5;  // [2:0.5:10]
+// Radial support ribs
+saucer_ribs = true; // [true, false]
+// Number of ribs
+saucer_rib_count = 6; // [4:1:12]
+// Rib bar width (mm, conformal saucer)
+saucer_rib_width = 2; // [1:0.5:4]
+// Rib height (mm)
+saucer_rib_height = 5; // [2:0.5:10]
 
 // ==============================
 // [8] Export Options
 // ==============================
 /* [Export Options] */
+// Choose what to render/export
 export_mode = "Both Together"; // [Planter Only, Saucer Only, Both Together]
 
 // ---------- Helpers ----------
 function clampv(x,a,b) = min(max(x,a), b);
-
-// Repeatable integer-only pseudo-random 0..1
 function prand(seed, idx) = ((seed*9301 + idx*49297) % 233280) / 233280;
 
-// Presets
+// Presets (ASCII-only to avoid UI quirks)
 function get_preset_dims(p) =
-    p=="Herb Pot (100mm)"       ? [100, 70, 90]  :
-    p=="Succulent Bowl (80mm)"  ? [80, 65, 50]   :
-    p=="Seedling Pot (102mm)"   ? [102, 75, 100] :
-    p=="Standard Pot (152mm)"   ? [152, 100, 140]:
-    p=="Large Pot (203mm)"      ? [203, 140, 180]:
-    p=="Orchid Pot (140mm)"     ? [140, 90, 160] :
-    p=="Cactus Planter (90mm)"  ? [90, 70, 110]  :
+    p=="Herb Pot (Top100 x H90, base70)"       ? [100, 70, 90]  :
+    p=="Succulent Bowl (Top80 x H50, base65)"  ? [80, 65, 50]   :
+    p=="Seedling Pot (Top102 x H100, base75)"  ? [102, 75, 100] :
+    p=="Standard Pot (Top152 x H140, base100)" ? [152, 100, 140]:
+    p=="Large Pot (Top203 x H180, base140)"    ? [203, 140, 180]:
+    p=="Orchid Pot (Top140 x H160, base90)"    ? [140, 90, 160] :
+    p=="Cactus Planter (Top90 x H110, base70)" ? [90, 70, 110]  :
     [top_diameter, bottom_diameter, height];
 
 dims = get_preset_dims(size_preset);
@@ -107,25 +147,56 @@ final_top_d = dims[0];
 final_bottom_d = dims[1];
 final_height = dims[2];
 
-// ---------- Styles ----------
+// ---------- Footprints (2D) ----------
+module footprint_twisted(d_bot){
+    if (twist_rounding > 0)
+        offset(r=twist_rounding) offset(r=-twist_rounding)
+            circle(d=d_bot, $fn=twist_sides);
+    else
+        circle(d=d_bot, $fn=twist_sides);
+}
+
+module footprint_wave(d_bot){
+    a_count = base_fn;
+    pts = [
+        for (t = [0:a_count-1])
+            let(a = t * 360 / a_count)
+            let(phase = a*wave_count)
+            let(off = sin(phase) * (wave_amplitude/100))
+            let(r = (d_bot/2) * (1 + off))
+            [ r*cos(a), r*sin(a) ]
+    ];
+    polygon(points=pts);
+}
+
+module footprint_topo(d_bot){
+    taps = 3; sum = 0;
+    for (k = [0:taps]){
+        j = k * topo_smoothness;
+        w = 1 / (j/topo_smoothness + 1);
+        sum = sum + prand(topo_seed + j, 0) * w;
+    }
+    norm = sum / 2;
+    d0 = d_bot * (1 + (norm - 0.5) * (topo_variation/100));
+    offset(r=1) offset(r=-1) circle(d=d0, $fn=base_fn);
+}
+
+module planter_footprint(d_bot){
+    if (planter_style == "Twisted")      footprint_twisted(d_bot);
+    else if (planter_style == "Wave")    footprint_wave(d_bot);
+    else                                 footprint_topo(d_bot);
+}
+
+// ---------- Planter bodies (spiral-friendly) ----------
 module twisted_planter() {
     scale_ratio = final_top_d / final_bottom_d;
-
-    if (twist_rounding > 0) {
-        linear_extrude(height=final_height, twist=twist_amount, scale=scale_ratio)
-            offset(r=twist_rounding) offset(r=-twist_rounding)
-                circle(d=final_bottom_d, $fn=twist_sides);
-    } else {
-        linear_extrude(height=final_height, twist=twist_amount, scale=scale_ratio)
-            circle(d=final_bottom_d, $fn=twist_sides);
-    }
+    linear_extrude(height=final_height, twist=twist_amount, scale=scale_ratio)
+        footprint_twisted(final_bottom_d);
 }
 
 module wave_planter() {
-    // Limit slices for performance; add tiny overlap for spiral-continuity
     slices = clampv( round(30*detail_level*(1 + wave_vertical_freq)), 24, 120 );
     a_count = base_fn;
-
     union() {
         for (i = [0:slices-1]) {
             z0 = i * final_height / slices;
@@ -133,10 +204,7 @@ module wave_planter() {
             z1 = (i == slices-1) ? final_height : z1_nom + 0.05;  // tiny overlap
             h_seg = max(0.06, z1 - z0);
 
-            // base diameter at this slice (linear taper)
             base_d = final_bottom_d + (final_top_d - final_bottom_d) * (z0 / final_height);
-
-            // precompute spiral/vertical terms
             spiral_term = wave_spiral ? (z0 * wave_spiral_amount / final_height) : 0;
             vterm = z0 * wave_vertical_freq * 360 / final_height;
 
@@ -168,15 +236,13 @@ module topographical_planter() {
 
             base_d = final_bottom_d + (final_top_d - final_bottom_d) * (i / layers);
 
-            // simple weighted taps
-            taps = 3;
-            sum = 0;
+            taps = 3; sum = 0;
             for (k = [0:taps]) {
                 j = k * topo_smoothness;
-                w = 1 / (j/topo_smoothness + 1); // 1, 1/2, 1/3, 1/4
+                w = 1 / (j/topo_smoothness + 1);
                 sum = sum + prand(topo_seed + j, i) * w;
             }
-            norm = sum / 2; // heuristic normalization
+            norm = sum / 2;
             current_d = base_d * (1 + (norm - 0.5) * (topo_variation/100));
 
             rot = topo_spiral ? (i * topo_spiral_amount / layers) : 0;
@@ -190,15 +256,10 @@ module topographical_planter() {
     }
 }
 
-// ---------- Main body selector ----------
 module planter_body() {
-    if (planter_style == "Twisted") {
-        twisted_planter();
-    } else if (planter_style == "Wave") {
-        wave_planter();
-    } else { // Topographical
-        topographical_planter();
-    }
+    if (planter_style == "Twisted")      twisted_planter();
+    else if (planter_style == "Wave")    wave_planter();
+    else                                  topographical_planter();
 }
 
 // ---------- Drainage patterns ----------
@@ -207,7 +268,7 @@ module drainage_holes_pattern(d_bot) {
         circle(d=hole_diameter);
     } else if (drainage_pattern == "Ring" || drainage_pattern == "Auto") {
         perim = 3.1415926536 * d_bot;
-        max_by_perim = floor(perim / (3*hole_diameter));            // ~3×D spacing
+        max_by_perim = floor(perim / (3*hole_diameter)); // ~3xD spacing
         safe_count = max(3, max_by_perim);
         cnt = (drainage_pattern == "Auto") ? min(hole_count, safe_count) : hole_count;
         if (drainage_pattern == "Auto" && hole_count > safe_count)
@@ -219,7 +280,7 @@ module drainage_holes_pattern(d_bot) {
         }
     } else if (drainage_pattern == "Grid") {
         n = ceil(sqrt(hole_count));
-        usable_r = max(0, d_bot/2 - 1.25*hole_diameter); // keep clear of wall
+        usable_r = max(0, d_bot/2 - 1.25*hole_diameter);
         if (n <= 1) {
             circle(d=hole_diameter);
         } else {
@@ -242,7 +303,7 @@ module drainage_holes_pattern(d_bot) {
     }
 }
 
-// ---------- Complete planter with drainage subtraction ----------
+// ---------- Planter with drainage subtraction ----------
 module planter_with_features() {
     difference() {
         planter_body();
@@ -256,33 +317,47 @@ module planter_with_features() {
     }
 }
 
-// ---------- Saucer helpers ----------
-function style_comp_factor(style) =
-    (style == "Wave") ? 0.5 :
-    (style == "Topographical") ? 0.4 :
-    0;
+// ---------- Saucers ----------
+module saucer_conformal(d_bot){
+    difference(){
+        linear_extrude(height=saucer_height)
+            offset(delta = saucer_gap + saucer_rim + saucer_wall_thickness)
+                planter_footprint(d_bot);
+        translate([0,0,saucer_floor_thickness])
+            linear_extrude(height=saucer_height)
+                offset(delta = saucer_gap)
+                    planter_footprint(d_bot);
+    }
+    if (saucer_ribs){
+        intersection(){
+            translate([0,0,saucer_floor_thickness])
+                linear_extrude(height=saucer_rib_height)
+                    offset(delta = saucer_gap)
+                        planter_footprint(d_bot);
+            union(){
+                span = d_bot + 2*(saucer_gap + saucer_rim + saucer_wall_thickness);
+                for (i=[0:saucer_rib_count-1]){
+                    rotate(i*360/saucer_rib_count)
+                        translate([0,0,saucer_floor_thickness])
+                            linear_extrude(height=saucer_rib_height)
+                                square([span, saucer_rib_width], center=true);
+                }
+            }
+        }
+    }
+}
 
-function style_extra_d(d_bot) =
-    (planter_style == "Wave") ? (d_bot * (wave_amplitude/100) * style_comp_factor("Wave")) :
-    (planter_style == "Topographical") ? (d_bot * (topo_variation/100) * style_comp_factor("Topographical")) :
-    0;
-
-function saucer_inner_d(d_bot) = d_bot + saucer_gap + style_extra_d(d_bot);
-function saucer_outer_d(d_bot) = saucer_inner_d(d_bot) + 2*(saucer_rim + saucer_wall_thickness);
-
-// ---------- Saucer ----------
-module saucer_standard(d_bot) {
-    inner_d1 = saucer_inner_d(d_bot);
-    outer_d1 = saucer_outer_d(d_bot);
-
-    // Wall + floor
+module saucer_round(d_bot){
+    inner_d1 = d_bot + 2*saucer_gap;
+    outer_d1 = inner_d1 + 2*(saucer_rim + saucer_wall_thickness);
     difference() {
         cylinder(h=saucer_height, d=outer_d1, $fn=max(48, floor(base_fn*0.8)));
         translate([0, 0, saucer_floor_thickness])
             cylinder(h=saucer_height, d=inner_d1, $fn=max(48, floor(base_fn*0.8)));
-    }
 
-    // Ribs
+        translate([0, 0, saucer_floor_thickness])
+            cylinder(h=saucer_height, d=inner_d1, $fn=max(48, floor(base_fn*0.8)));
+    }
     if (saucer_ribs) {
         inner_r = inner_d1/2;
         rib_end_r = max(1.2, inner_r - 3);
@@ -297,39 +372,41 @@ module saucer_standard(d_bot) {
     }
 }
 
+module saucer_auto(d_bot){
+    if (saucer_match_shape) saucer_conformal(d_bot);
+    else                    saucer_round(d_bot);
+}
+
 // ---------- Export assembly ----------
-spacing = final_top_d + saucer_outer_d(final_bottom_d) + 20;
+// Tightened layout: half-widths + ~10 mm margin
+function saucer_outer_span(d_bot) = d_bot + 2*(saucer_gap + saucer_rim + saucer_wall_thickness);
+desired_layout_gap = 10;
+spacing = (final_top_d/2) + (saucer_outer_span(final_bottom_d)/2) + desired_layout_gap;
 
 if (export_mode == "Planter Only") {
     planter_with_features();
 } else if (export_mode == "Saucer Only") {
-    if (generate_saucer) { saucer_standard(final_bottom_d); }
+    if (generate_saucer) { saucer_auto(final_bottom_d); }
 } else { // Both Together
     planter_with_features();
     if (generate_saucer) {
-        translate([spacing, 0, 0]) saucer_standard(final_bottom_d);
+        translate([spacing, 0, 0]) saucer_auto(final_bottom_d);
     }
 }
 
 // ---------- Validation & printability echoes ----------
 if (final_top_d <= 0 || final_bottom_d <= 0 || final_height <= 0)
     echo("ERROR: All dimensions must be positive");
-
 if (bottom_thickness < 2)
     echo("Warning: Bottom thickness < 2mm may be fragile");
-
 if (saucer_wall_thickness < 1.2)
     echo("Warning: Saucer wall thickness < 1.2mm may be fragile with FDM.");
-
 if (wave_amplitude > 20 && wave_count >= 12)
     echo("Warning: Aggressive Wave (amp>20% & count>=12) may create >55° overhangs near the base.");
 
 echo("Info: Planter body is for SPIRAL VASE mode. Enable Vase/Spiral in slicer.");
-echo(str("Hint: Set bottom layers ≥ ",
+echo(str("Hint: Set bottom layers >= ",
          ceil(bottom_thickness / 0.4),
-         " at 0.4 mm layer height (scale accordingly). Set top layers = 0."));
-
-if (planter_style == "Wave")
-    echo("Info: Saucer gap compensated by ~", style_extra_d(final_bottom_d), " mm for Wave peaks");
-else if (planter_style == "Topographical")
-    echo("Info: Saucer gap compensated by ~", style_extra_d(final_bottom_d), " mm for Topo variation");
+         " at 0.4 mm layer height (scale accordingly). Top layers = 0."));
+if (saucer_match_shape)
+    echo("Info: Saucer matches planter footprint.");
