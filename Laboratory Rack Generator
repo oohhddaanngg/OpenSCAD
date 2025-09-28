@@ -1,357 +1,227 @@
-// Laboratory Reagent Rack Generator v1.0 (Press-fit + Stepped)
-// by MTin3D (Oohhddaanngg), 2025
-// Summary: Generates two lab rack families:
-//  A) Frame + Plates with PRESS-FIT cheeks (symmetrical 2 mm visible overlap).
-//  B) Stepped display rack (angled shelves).
-// Opening styles: Holes, Slots, Mixed. Optional conical lead-ins on holes.
-//
-// Units: millimeters. Target: FDM (PETG plates, Polymaker CoPE cheeks).
-// $fn kept moderately high for smooth lead-ins. Tweak to taste.
+// Lab Rack Generator v2.3 — 12x75 Test Tube Rack + Antisera Rack
+// Fix: spherical cups are clipped to keep a solid floor (no unintended holes).
 
 $fn = 64; $fa = 6; $fs = 0.8;
 
-//---------------------------------------------------------------
-// [Rack Family]
-//---------------------------------------------------------------
 /* [Rack Family] */
-rack_family = "Press-fit Plates"; // [Press-fit Plates, Stepped Display]
+rack_family = "12x75 Test Tube Rack"; // [12x75 Test Tube Rack, Antisera Rack]
 
-//---------------------------------------------------------------
-// [Opening Pattern]
-//---------------------------------------------------------------
-/* [Openings] */
-opening_type = "Holes"; // [Holes, Slots, Mixed]
-container_diameter = 12.8;   // hole Ø for tubes/vials
-clearance_extra = 0.0;       // extra Ø added after container_diameter
-hole_depth = 0;              // [0:50]  0=through, >0=pocketed depth
-
-// Lead-in (conical chamfer) for Holes
-lead_in_enable = true;
-lead_in_height = 1.8;        // [0:0.2:3]
-lead_in_factor = 1.6;        // [1.0:0.05:2.4] cone top Ø = d * factor
-
-// Slot (for gel cards etc.)
-slot_width = 55;             // [30:80]
-slot_depth = 8;              // [5:20]
-
-// Grid sizing
-grid_columns = 10;           // [1:30]
-grid_rows    = 6;            // [1:30]
-hole_rows_mixed = 4;         // used when opening_type=Mixed
-slot_rows_mixed = 2;
-
-// Spacing and walls
-wall_thickness = 3.0;        // between openings & row blocks (min 3)
-$wall_min = 3.0;
-
-//---------------------------------------------------------------
-// [Plate Geometry]  (used in both families where plates exist)
-//---------------------------------------------------------------
 /* [Plate Geometry] */
-plate_thickness = 5.0;       // [3:10]
+plate_width       = 126.8;
+plate_depth       = 255.8;
+plate_thickness   = 5.0;    // [3:10]
 
-// Exact plate footprint (from Fusion sketch)
-plate_width  = 126.8;
-plate_depth  = 255.8;
+/* [Borders] */
+border_left_center   = 12.40;
+border_right_center  = 12.40;
+border_top_center    = 17.40;
+border_bottom_center = 17.40;
+lock_symmetry = "On"; // [On, Off]
 
-// Borders (center-to-edge clearances), symmetric left/right by default
-border_left_center  = 12.40; // center of first column to left edge (confirmed)
-border_right_center = 12.40; // mirror for symmetry
-border_top_center   = 17.40; // to top edge
-border_bottom_center= 17.40; // assume symmetry; adjust as needed
+/* [Grid & Fit] */
+auto_fit = true;       // [true, false]
+wall_thickness = 3.0;  // [3.0:0.1:9.0]
 
-// Derived opening diameter
-actual_hole_diameter = container_diameter + clearance_extra;
+/* [Plate – Holes] */
+holes_leadin = "On"; // [On, Off]
+container_diameter = 12.8;
+clearance_extra    = 0.0;
+lead_in_height     = 1.8;  // [0:0.2:3]
+lead_in_factor     = 1.6;  // [1.0:0.05:2.4]
 
-// Conical lead-in radius used in safety guards
-lead_in_radius = lead_in_enable ? (actual_hole_diameter*(lead_in_factor-1)/2) : 0;
+/* [Plate – Cups] */
+cup_depth          = 3.0;     // requested spherical-bowl depth
+cup_floor_min      = 2.0;     // minimum solid floor under each cup
+cup_drain_enable   = false;   // Off by default
+cup_drain_diam     = 1.2;     // used ONLY when enabled
 
-//---------------------------------------------------------------
-// [Press-fit Cheeks — Rack A]
-//---------------------------------------------------------------
-/* [Press-fit Cheeks] */
-pf_tier_count   = 3;          // [1:6]
-pf_tier_spacing = 22;         // vertical distance between plate top faces
-pf_cheek_thickness = 8;       // [6:16]
+/* [End Piece (Press-fit)] */
+pf_cheek_thickness = 8.0;
+pf_tier_spacing    = 22.0;
+pf_visible_overlap = 2.0;
+pf_pocket_depth    = 3.0;
+pf_pocket_fit      = 0.25;
+pf_vertical_grip   = 0.05;
+pf_bottom_foot     = 6.0;
+pf_top_cap         = 6.0;
 
-// Press-fit spec (agreed defaults)
-pf_visible_overlap = 2.0;     // how much cheek covers plate face (each side)
-pf_pocket_depth    = 3.0;     // recess into cheek
-pf_pocket_fit      = 0.25;    // pocket width over plate_thickness (+0.20/+0.25/+0.30)
-pf_vertical_grip   = 0.05;    // pocket height under plate_thickness (light grip)
+/* [Antisera Rack] */
+as_tiers      = 3;           // [1:6]
+as_shelf_thk  = 5.0;
+as_rise       = 32.0;
+as_run        = 42.0;
+as_cheek_thk  = 7.0;
+as_cheek_depth= 127.0;
 
-// Overall assembly margins
-pf_bottom_foot    = 6;        // extra cheek under bottom plate
-pf_top_cap        = 6;        // extra cheek above top plate
-
-//---------------------------------------------------------------
-// [Stepped Display — Rack B]
-//---------------------------------------------------------------
-/* [Stepped Display] */
-sd_tier_count   = 3;          // [1:6]
-sd_shelf_thk    = 5.0;        // [3:10]
-sd_tier_rise    = 32.0;       // vertical step between shelves
-sd_tier_run     = 42.0;       // horizontal step (controls tilt)
-sd_cheek_depth  = 127.0;      // overall front→back of cheeks
-sd_cheek_thk    = 7.0;        // side panel thickness
-sd_front_lip    = 0.0;        // small lip if desired
-
-// Holes per shelf row (uses same hole/slot settings)
-sd_columns = 10;              // default same as grid_columns
-sd_left_center  = 12.40;
-sd_right_center = 12.40;
-sd_front_center = 17.40;
-
-//---------------------------------------------------------------
-// [Export]
-//---------------------------------------------------------------
 /* [Export] */
-export_part = "Complete Assembly"; // [Complete Assembly, Plates Only, Cheeks Only, Stepped Only, All Parts Separated]
+export_part = "All parts (flat)"; // [All parts (flat), Plate - Holes only, Plate - Cups only, End piece only, Antisera Rack (all flat)]
 
-//---------------------------------------------------------------
-// Safety & guards
-//---------------------------------------------------------------
-module warn_guard(msg){ echo(str("[WARN] ", msg)); }
+// ---------- Derived / guards ----------
+$wall_min = 3.0;
+wall_thk = wall_thickness < $wall_min ? $wall_min : wall_thickness;
 
-// Enforce minimums for printability & frame overlap safety
+actual_hole_d = container_diameter + clearance_extra;
+lead_in_on = (holes_leadin == "On");
+lead_in_radius = lead_in_on ? (actual_hole_d*(lead_in_factor-1)/2) : 0;
+
+module warn(m){ echo(str("[WARN] ", m)); }
+if (cup_floor_min < 0.8) warn("cup_floor_min is very thin; consider ≥1.5–2.0 mm.");
+if (plate_thickness <= cup_floor_min) warn("plate_thickness must be > cup_floor_min.");
+
 function _min_border_needed() = pf_visible_overlap + 1.2 + lead_in_radius;
+if (border_left_center  < _min_border_needed())  warn(str("Left border too small; need ≥ ", _min_border_needed()));
+if (border_right_center < _min_border_needed())  warn(str("Right border too small; need ≥ ", _min_border_needed()));
 
-border_left_ok  = border_left_center  >= _min_border_needed();
-border_right_ok = border_right_center >= _min_border_needed();
+// ---------- Symmetry handling ----------
+function _L() = lock_symmetry=="On" ? border_left_center : border_left_center;
+function _R() = lock_symmetry=="On" ? _L() : border_right_center;
+function _T() = lock_symmetry=="On" ? border_top_center : border_top_center;
+function _B() = lock_symmetry=="On" ? _T() : border_bottom_center;
 
-if (!border_left_ok)  warn_guard(str("Left border too small. Need ≥ ", _min_border_needed(), " (got ", border_left_center, ")"));
-if (!border_right_ok) warn_guard(str("Right border too small. Need ≥ ", _min_border_needed(), " (got ", border_right_center, ")"));
-if (wall_thickness < $wall_min) warn_guard(str("wall_thickness raised to ", $wall_min));
-wall_thickness_fixed = wall_thickness < $wall_min ? $wall_min : wall_thickness;
+// ---------- Grid centers (shared by both plates) ----------
+function _pitch_h() = actual_hole_d + wall_thk;
 
-//---------------------------------------------------------------
-// Utility: 2D hole/slot layout centers for a block
-//---------------------------------------------------------------
-function _spacing_hole() = actual_hole_diameter + wall_thickness_fixed;
-function _spacing_slot_x() = slot_width + wall_thickness_fixed;
-function _spacing_slot_y() = slot_depth + wall_thickness_fixed;
+function _cols_auto() = floor( (plate_width - (_L()+_R())) / _pitch_h() ) + 1;
+function _rows_auto() = floor( (plate_depth - (_T()+_B())) / _pitch_h() ) + 1;
 
-// Compute rows for Mixed
-actual_hole_rows = opening_type=="Mixed" ? hole_rows_mixed : grid_rows;
-actual_slot_rows = opening_type=="Mixed" ? slot_rows_mixed : (opening_type=="Slots" ? grid_rows : 0);
+function _cols() = auto_fit ? max(1,_cols_auto()) : _cols_auto();
+function _rows() = auto_fit ? max(1,_rows_auto()) : _rows_auto();
 
-// 2D center offsets from edges (center-referenced borders)
-function _offset_x_holes() = border_left_center;
-function _offset_y_holes() = border_top_center;
+function _span_cols() = (_cols()-1)*_pitch_h();
+function _span_rows() = (_rows()-1)*_pitch_h();
 
-function _offset_x_slots() = // horizontally center to widest need
-    max(border_left_center, border_left_center) ; // (kept for parity; slots use their own width+border below)
-    
-//---------------------------------------------------------------
-// Module: subtract opening at [cx,cy] with optional lead-in & depth
-//---------------------------------------------------------------
-module opening_hole_at(cx, cy, through=true){
-    translate([cx, cy, -0.1]){
-        // straight portion
-        cylinder(h = (through ? plate_thickness+0.4 : hole_depth+0.2) - (lead_in_enable ? lead_in_height : 0),
-                 d = actual_hole_diameter);
-        // lead-in (cone) on top face
-        if (lead_in_enable)
-            translate([0,0,(through ? plate_thickness : hole_depth) - lead_in_height + 0.1])
-                cylinder(h=lead_in_height, d1=actual_hole_diameter*lead_in_factor, d2=actual_hole_diameter);
+function _slack_x() = (plate_width - (_L()+_R())) - _span_cols();
+function _slack_y() = (plate_depth - (_T()+_B())) - _span_rows();
+
+function _x0() = (lock_symmetry=="On") ? (_L() + _slack_x()/2) : _L();
+function _y0() = (lock_symmetry=="On") ? (_T() + _slack_y()/2) : _T();
+
+function cx(ix) = _x0() + ix*_pitch_h();
+function cy(iy) = _y0() + iy*_pitch_h();
+
+// ---------- primitives ----------
+module hole_at(cx,cy){
+    translate([cx,cy,-0.1]) cylinder(h=plate_thickness+0.4, d=actual_hole_d);
+    if (lead_in_on)
+        translate([cx,cy,plate_thickness - lead_in_height + 0.1])
+            cylinder(h=lead_in_height, d1=actual_hole_d*lead_in_factor, d2=actual_hole_d);
+}
+
+// ----- Spherical cup cutter (robust, slicer-friendly) -----
+module cup_spherical_at(cx, cy) {
+    // Effective depth (honor minimum floor)
+    h_req = cup_depth;
+    h_max = max(0.1, plate_thickness - cup_floor_min);
+    h_eff = min(h_req, h_max);
+
+    // Sphere that matches the rim diameter at depth h_eff
+    Ds = actual_hole_diameter;                    // same rim Ø as holes
+    R  = (h_eff*h_eff + (Ds/2)*(Ds/2)) / (2*h_eff);
+    zc = plate_thickness - (R - h_eff);      // sphere center z at top-open bowl
+
+    // Clip slightly below the tangent plane to avoid coplanar artifacts
+    eps = 0.05;                               // 50 µm; safe for PETG
+    z_clip = plate_thickness - h_eff - eps;
+
+    // Subtract only the spherical cap ABOVE z_clip (no cylindrical segment)
+    intersection() {
+        translate([cx, cy, zc]) sphere(r = R, $fn = 96);
+        translate([-1e3, -1e3, z_clip])
+            cube([2e3, 2e3, 2e3], center = false);
+    }
+
+    // Optional drain (only when enabled)
+    if (cup_drain_enable)
+        translate([cx, cy, -0.2]) cylinder(h = plate_thickness + 0.6,
+                                           d = cup_drain_diam, $fn = 32);
+}
+
+// ---------- plates ----------
+module plate_holes(){
+    difference(){
+        cube([plate_width, plate_depth, plate_thickness]);
+        for (ix=[0:_cols()-1])
+        for (iy=[0:_rows()-1])
+            hole_at(cx(ix), cy(iy));
     }
 }
 
-module opening_slot_at(cx, cy, through=true){
-    // slot is a rectangle (no lead-in)
-    translate([cx-slot_width/2, cy-slot_depth/2, -0.1])
-        cube([slot_width, slot_depth, (through ? plate_thickness+0.4 : hole_depth+0.2)]);
-}
-
-//---------------------------------------------------------------
-// Module: create plate with chosen pattern
-//---------------------------------------------------------------
-module rack_plate(){
-    difference(){
+// ----- Bottom plate (Cups) -----
+module plate_cups() {
+    difference() {
         // base plate
         cube([plate_width, plate_depth, plate_thickness]);
 
-        // openings
-        if (opening_type=="Holes"){
-            for (ix=[0:grid_columns-1])
-            for (iy=[0:grid_rows-1]){
-                cx = border_left_center + ix*_spacing_hole();
-                cy = border_top_center  + iy*_spacing_hole();
-                opening_hole_at(cx,cy, hole_depth==0);
-            }
-        } else if (opening_type=="Slots"){
-            for (ix=[0:grid_columns-1])
-            for (iy=[0:grid_rows-1]){
-                cx = border_left_center + ix*_spacing_slot_x();
-                cy = border_top_center  + iy*_spacing_slot_y();
-                opening_slot_at(cx,cy, hole_depth==0);
-            }
-        } else { // Mixed
-            // holes block on top
-            for (ix=[0:grid_columns-1])
-            for (iy=[0:actual_hole_rows-1]){
-                cx = border_left_center + ix*_spacing_hole();
-                cy = border_top_center  + iy*_spacing_hole();
-                opening_hole_at(cx,cy, hole_depth==0);
-            }
-            // slots block below, separated by wall thickness
-            y0 = border_top_center + actual_hole_rows*_spacing_hole() + wall_thickness_fixed;
-            for (ix=[0:grid_columns-1])
-            for (iy=[0:actual_slot_rows-1]){
-                cx = border_left_center + ix*_spacing_slot_x();
-                cy = y0 + iy*_spacing_slot_y();
-                opening_slot_at(cx,cy, hole_depth==0);
+        // subtract spherical cups ONLY (no cylinders here)
+        // reuse the SAME XY grid you use for the holes plate
+        holes_width = (grid_columns - 1) * hole_spacing + actual_hole_d;
+        holes_depth = (grid_rows    - 1) * hole_spacing + actual_hole_d;
+        offset_x = (plate_width - holes_width) / 2;
+        offset_y = (plate_depth - holes_depth) / 2;
+
+        for (x = [0:grid_columns-1]) {
+            for (y = [0:grid_rows-1]) {
+                cx = offset_x + (x * hole_spacing) + (actual_hole_d/2);
+                cy = offset_y + (y * hole_spacing) + (actual_hole_d/2);
+                cup_spherical_at(cx, cy);
             }
         }
     }
 }
 
-//---------------------------------------------------------------
-// Press-fit cheeks (Rack A)
-// Cheek internal height: stack of plates with pf_tier_spacing.
-// Pockets capture plate edges with visible overlap on both sides.
-//---------------------------------------------------------------
-function _pf_stack_height() =
-    pf_bottom_foot + pf_tier_count*plate_thickness + (pf_tier_count-1)*pf_tier_spacing + pf_top_cap;
 
-function _pf_pocket_width() = plate_thickness + pf_pocket_fit;
-function _pf_pocket_height() = plate_thickness - pf_vertical_grip;
-function _pf_inner_gap_between_cheeks() = plate_width - 2*pf_visible_overlap;
+// ---------- end piece ----------
+function _stack_height_2tiers() = pf_bottom_foot + 2*plate_thickness + pf_tier_spacing + pf_top_cap;
+function _pocket_w()  = plate_thickness + pf_pocket_fit;
+function _pocket_h()  = plate_thickness - pf_vertical_grip;
 
-module pf_cheek(){
-    // Cheek outer block
+module end_piece(){
     cheek_w = pf_cheek_thickness;
-    cheek_h = _pf_stack_height();
-    cheek_d = pf_pocket_depth + pf_visible_overlap; // depth includes overlap "cover"
+    cheek_d = pf_pocket_depth + pf_visible_overlap;
+    cheek_h = _stack_height_2tiers();
     difference(){
-        cube([cheek_w, cheek_d, cheek_h]); // X=thick, Y=depth, Z=height (we'll rotate later)
-
-        // carve pockets along height (one per plate)
-        for (i=[0:pf_tier_count-1]){
-            z0 = pf_bottom_foot + i*(plate_thickness + pf_tier_spacing);
-            // pocket rectangle offset from front by visible overlap
-            translate([0, pf_visible_overlap, z0])
-                cube([cheek_w+0.1, _pf_pocket_width(), _pf_pocket_height()+0.02]);
-        }
+        cube([cheek_w, cheek_d, cheek_h]);
+        // lower pocket (cups plate)
+        translate([0, pf_visible_overlap, pf_bottom_foot])
+            cube([cheek_w+0.1, _pocket_w(), _pocket_h()+0.02]);
+        // upper pocket (holes plate)
+        translate([0, pf_visible_overlap, pf_bottom_foot + plate_thickness + pf_tier_spacing])
+            cube([cheek_w+0.1, _pocket_w(), _pocket_h()+0.02]);
     }
 }
 
-module pf_frame_and_plates(assembled=true){
-    // Build two cheeks and plates
-    // Orientation: X across width, Y along depth (plate_depth), Z up (stack)
-    translate([0,0,0]) // origin at left cheek front-bottom
-    {
-        // Left cheek
-        rotate([90,0,0]) // make cheek depth align with Y
-            pf_cheek();
+/* Antisera placeholders */
+module antisera_cheek(){
+    linear_extrude(height=as_cheek_thk)
+        polygon(points=[[0,0],[as_cheek_depth,0],[as_cheek_depth, as_tiers*(as_shelf_thk+as_rise)-as_rise],
+                        [0,        as_tiers*(as_shelf_thk+as_rise)-as_rise]]);
+}
+module antisera_shelf(){ plate_holes(); }
 
-        // Right cheek
-        translate([pf_cheek_thickness + _pf_inner_gap_between_cheeks(), 0, 0])
-            rotate([90,0,0]) pf_cheek();
-
-        // Plates
-        for (i=[0:pf_tier_count-1]){
-            z_plate = pf_bottom_foot + i*(plate_thickness + pf_tier_spacing);
-            x_plate = pf_cheek_thickness + pf_visible_overlap; // sits between overlaps
-            y_plate = 0;
-
-            if (assembled){
-                translate([x_plate, y_plate, z_plate])
-                    rack_plate();
-            } else {
-                // spaced out front-to-back for printing
-                translate([x_plate + (i* (plate_width+10)), y_plate + (plate_depth+10), 0])
-                    rack_plate();
-            }
-        }
-    }
+// ---------- flat layouts (origin-based, no overlap) ----------
+module layout_12x75_flat(){
+    gap = 12;
+    translate([0,0,0]) end_piece();
+    translate([pf_cheek_thickness + gap, 0, 0]) plate_cups();
+    translate([pf_cheek_thickness + gap + plate_width + gap, 0, 0]) plate_holes();
 }
 
-//---------------------------------------------------------------
-// Stepped display rack (Rack B)
-// Two cheeks define the slope; shelves are simple plates placed along steps.
-// Uses sd_* parameters; openings derived from same hole/slot logic.
-//---------------------------------------------------------------
-function _sd_total_height() = sd_tier_count*sd_shelf_thk + (sd_tier_count-1)*sd_tier_rise + sd_front_lip;
-function _sd_total_run()   = (sd_tier_count-1)*sd_tier_run + plate_depth; // reuse plate_depth as shelf depth
-
-module sd_cheek_profile(){
-    // simple polygon cheek profile (side view), extruded later to sd_cheek_thk
-    H = _sd_total_height();
-    D = sd_cheek_depth;
-
-    polygon(points=[
-        [0,0],
-        [D,0],
-        [D,H],
-        [0,H]
-    ]);
+module layout_antisera_flat(){
+    gap = 12;
+    translate([0,0,0]) antisera_cheek();
+    translate([as_cheek_thk + gap, 0, 0]) antisera_cheek();
+    translate([2*(as_cheek_thk + gap), 0, 0]) antisera_shelf();
+    translate([2*(as_cheek_thk + gap) + plate_width + gap, 0, 0]) antisera_shelf();
+    translate([2*(as_cheek_thk + gap) + 2*(plate_width + gap), 0, 0]) antisera_shelf();
 }
 
-module sd_cheek(){
-    linear_extrude(height=sd_cheek_thk) sd_cheek_profile();
+// ---------- exporter ----------
+if (rack_family == "12x75 Test Tube Rack"){
+    if (export_part == "All parts (flat)")        layout_12x75_flat();
+    else if (export_part == "Plate - Holes only") plate_holes();
+    else if (export_part == "Plate - Cups only")  plate_cups();
+    else if (export_part == "End piece only")     end_piece();
+    else                                          layout_antisera_flat();
+} else {
+    layout_antisera_flat();
 }
-
-module sd_shelf(){
-    // reuse rack_plate footprint for shelf width/depth but allow separate column/border if desired
-    rack_plate();
-}
-
-module sd_assembly(assembled=true){
-    // Place two cheeks and sd_tier_count shelves, stepped
-    // Use same plate_width/plate_depth; left/right borders sd_left_center/sd_right_center if you want later.
-    // Cheeks at ends
-    translate([0,0,0]) sd_cheek(); // left
-    translate([plate_width + 2*sd_cheek_thk, 0, 0]) sd_cheek(); // right
-
-    // Shelves: step up by rise/run
-    for (i=[0:sd_tier_count-1]){
-        x = sd_cheek_thk; // between cheeks
-        y = i*sd_tier_run;
-        z = i*(sd_shelf_thk + sd_tier_rise);
-
-        if (assembled){
-            translate([x, y, z]) sd_shelf();
-        } else {
-            translate([x + (i*(plate_width+10)), sd_cheek_depth + 10, 0]) sd_shelf();
-        }
-    }
-}
-
-//---------------------------------------------------------------
-// Export switchboard
-//---------------------------------------------------------------
-if (rack_family=="Press-fit Plates"){
-    if (export_part=="Complete Assembly"){
-        pf_frame_and_plates(true);
-    } else if (export_part=="Plates Only"){
-        // lay plates in a row for printing
-        pf_frame_and_plates(false);
-    } else if (export_part=="Cheeks Only"){
-        // two cheeks separated
-        translate([0,0,0]) rotate([90,0,0]) pf_cheek();
-        translate([pf_cheek_thickness + _pf_inner_gap_between_cheeks() + 20,0,0]) rotate([90,0,0]) pf_cheek();
-    } else if (export_part=="All Parts Separated"){
-        pf_frame_and_plates(false);
-        translate([0, - (pf_pocket_depth+pf_visible_overlap) - 20, 0]){
-            rotate([90,0,0]) pf_cheek();
-            translate([pf_cheek_thickness + _pf_inner_gap_between_cheeks() + 20,0,0]) rotate([90,0,0]) pf_cheek();
-        }
-    } else if (export_part=="Stepped Only"){
-        sd_assembly(true);
-    }
-} else { // Stepped Display
-    if (export_part=="Complete Assembly" || export_part=="Stepped Only"){
-        sd_assembly(true);
-    } else if (export_part=="All Parts Separated"){
-        sd_assembly(false);
-    } else if (export_part=="Cheeks Only"){
-        sd_cheek();
-        translate([plate_width + 2*sd_cheek_thk + 20,0,0]) sd_cheek();
-    } else { // Plates Only
-        // export one shelf layout
-        rack_plate();
-    }
-}
-
-// end of file
