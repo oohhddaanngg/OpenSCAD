@@ -22,9 +22,15 @@ $fn = base_fn; $fa = 6; $fs = 0.8;
 // ==============================
 // [1] Style Selection
 // ==============================
-/* [Style Selection] */
+/* [Style Selection]
+   Helix — refined spiral lift
+   Ripple — rhythmic radial waves
+   Strata — organic layered contours
+   Serif Flow — fluted silhouette with an elegant S-curve
+*/
 // Choose planter body style
 planter_style = "Ripple"; // [Helix, Ripple, Strata, Serif Flow]
+
 
 // ==============================
 // [2] Size Options
@@ -300,16 +306,22 @@ module strata_planter() {
 
 // ---- Serif Flow planter (S-curve shear over fluted profile)
 module serif_flow_planter() {
-    slices = clampv( round(32*detail_level), 24, 140 );
+    // More slices when flutes are dense or shear is large
+    slices = clampv(
+        round(34*detail_level * (1 + serif_flute_count/30 + serif_shear_amplitude/40)),
+        36, 200
+    );
     a_count = base_fn;
 
     union() {
         for (i = [0:slices-1]) {
-            // slice z span
+            // slice z span with generous vertical overlap for solid fusion
             z0 = i * final_height / slices;
             z1_nom = (i+1) * final_height / slices;
-            z1 = (i == slices-1) ? final_height : z1_nom + 0.05;
-            h_seg = max(0.06, z1 - z0);
+            overlap_z = max(0.2, 0.25 * (final_height / slices));  // ~25% of slice height, ≥0.2 mm
+            z1 = (i == slices-1) ? final_height : min(final_height, z1_nom + overlap_z);
+            h_seg = max(0.2, z1 - z0);
+
 
             // base diameter with gentle top taper
             t = z0 / final_height;
