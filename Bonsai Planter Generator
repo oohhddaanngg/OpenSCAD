@@ -1,0 +1,188 @@
+// Bonsai Planter Generator v1.0
+// by Oohhddaanngg (MTin3D)
+
+$fn = 96;  $fa = 6;  $fs = 0.8;
+
+/* [Bonsai Planter Shape] */
+bonsai_shape = "Oval"; // [Oval, Rounded Rectangle, Rectangle, Lotus, Hexagon, Octagon]
+bonsai_length = 200; // [100:10:300]
+bonsai_width  = 140; // [80:10:250]
+bonsai_height = 45;  // [20:5:80]
+
+/* [Bonsai Texture] */
+bonsai_texture = "Vertical Ribs"; // [Vertical Ribs, Horizontal Bands, Smooth, Bark Texture, Wood Grain]
+bonsai_rib_count = 110; // [30:5:120]
+bonsai_rib_depth = 1.5; // [0.5:0.5:3]
+bonsai_band_count = 8; // [4:1:16]
+bark_ridges_bonsai = 12; bark_irregularity_bonsai = 3;
+bonsai_grain_spacing = 3; bonsai_grain_amplitude = 1.0; bonsai_grain_frequency = 10;
+
+/* [Bonsai Drainage] */
+drainage_holes = true;
+bonsai_drainage_style = "Clusters"; // [Traditional, Grid, Clusters, Linear]
+bonsai_hole_size = 8; // [5:1:12]
+bonsai_hole_count = 9; // [3:1:15]
+bonsai_cluster_pattern = 4; // [1:1:5]
+
+/* [Bonsai Rim] */
+bonsai_rim_style = "None"; // [None, Flat, Beveled, Lipped]
+bonsai_rim_height = 3; // [2:0.5:6]
+
+/* [Saucer/Tray] */
+generate_saucer = true;
+saucer_height = 12;           // lower, thin saucer
+saucer_wall_thickness = 1.6;  // [0.8:0.1:3]
+saucer_floor_thickness = 1.2; // [0.6:0.1:3]
+saucer_gap = 3;               // tight fit
+saucer_rim = 2.5;
+saucer_flare = 0.5;
+saucer_ribs = true; saucer_rib_count = 6; saucer_rib_height = 4;
+
+/* [Export Mode] */
+export_mode = "Both Together"; // [Planter Only, Saucer Only, Both Together]
+
+/* [Advanced] */
+bottom_thickness = 3; // inner floor (non-vase flow only)
+vase_mode = true;     // true = omit inner offset (spiral vase)
+wall_thickness_estimate = 1.0;
+inner_offset = vase_mode ? 0 : max(wall_thickness_estimate*1.2,0.6);
+
+// ===== Base shapes =====
+module bonsai_oval_shape(l,w){ scale([l/100,w/100,1]) offset(r=10) offset(r=-10) circle(d=100,$fn=64); }
+module bonsai_rounded_rect_shape(l,w){ offset(r=8) square([l-16,w-16],center=true); }
+module bonsai_rectangle_shape(l,w){ offset(r=3) square([l-6,w-6],center=true); }
+module bonsai_lotus_shape(l,w){ union(){ for(a=[0:60:360]) rotate(a) translate([l/3.5,0]) circle(d=w/2); circle(d=w*0.8);} }
+module bonsai_hexagon_shape(l,w){ circle(d=max(l,w),$fn=6); }
+module bonsai_octagon_shape(l,w){ circle(d=max(l,w),$fn=8); }
+
+module bonsai_base_shape(){
+    if(bonsai_shape=="Oval") bonsai_oval_shape(bonsai_length,bonsai_width);
+    else if(bonsai_shape=="Rounded Rectangle") bonsai_rounded_rect_shape(bonsai_length,bonsai_width);
+    else if(bonsai_shape=="Rectangle") bonsai_rectangle_shape(bonsai_length,bonsai_width);
+    else if(bonsai_shape=="Lotus") bonsai_lotus_shape(bonsai_length,bonsai_width);
+    else if(bonsai_shape=="Hexagon") bonsai_hexagon_shape(bonsai_length,bonsai_width);
+    else if(bonsai_shape=="Octagon") bonsai_octagon_shape(bonsai_length,bonsai_width);
+}
+
+// ===== Textures =====
+module bonsai_outer_textured(){
+    if(bonsai_texture=="Vertical Ribs"){
+        difference(){
+            linear_extrude(height=bonsai_height) bonsai_base_shape();
+            for(i=[0:360/bonsai_rib_count:360])
+                rotate(i) translate([max(bonsai_length,bonsai_width)/2+2,0])
+                    square([bonsai_rib_depth*2,bonsai_length*2],center=true);
+        }
+    } else if(bonsai_texture=="Horizontal Bands"){
+        union(){
+            linear_extrude(height=bonsai_height) bonsai_base_shape();
+            for(z=[5: bonsai_height/bonsai_band_count : bonsai_height-5])
+                translate([0,0,z]) linear_extrude(height=2)
+                    offset(r=bonsai_rib_depth) bonsai_base_shape();
+        }
+    } else if(bonsai_texture=="Smooth"){
+        linear_extrude(height=bonsai_height) bonsai_base_shape();
+    } else if(bonsai_texture=="Bark Texture"){
+        for(z=[0:1.5:bonsai_height])
+            translate([0,0,z]) linear_extrude(height=1.6)
+                offset(r=sin(z*5)*bark_irregularity_bonsai*0.3) bonsai_base_shape();
+    } else if(bonsai_texture=="Wood Grain"){
+        union(){
+            linear_extrude(height=bonsai_height) bonsai_base_shape();
+            for(z=[bonsai_grain_spacing: bonsai_grain_spacing : bonsai_height-bonsai_grain_spacing])
+                translate([0,0,z]) linear_extrude(height=bonsai_grain_amplitude*2)
+                    difference(){
+                        offset(r=bonsai_grain_amplitude + sin(z*bonsai_grain_frequency)*bonsai_grain_amplitude*0.5)
+                            bonsai_base_shape();
+                        offset(r=-0.5) bonsai_base_shape();
+                    }
+        }
+    }
+}
+
+// ===== Planter body =====
+module generate_bonsai_planter(){
+    difference(){
+        bonsai_outer_textured();
+        if(!vase_mode)
+            translate([0,0,bottom_thickness])
+                linear_extrude(height=bonsai_height+0.1)
+                    offset(r=-inner_offset) bonsai_base_shape();
+    }
+    if(bonsai_rim_style!="None")
+        translate([0,0,bonsai_height - bonsai_rim_height])
+            linear_extrude(height=bonsai_rim_height)
+                difference(){ offset(r=(bonsai_rim_style=="Lipped")?4:2) bonsai_base_shape(); offset(r=-6) bonsai_base_shape(); }
+}
+
+// ===== Drainage =====
+module bonsai_drainage_pattern(){
+    if(bonsai_drainage_style=="Traditional"){
+        for(x=[-bonsai_length/3,0,bonsai_length/3])
+         for(y=[-bonsai_width/3,0,bonsai_width/3])
+          if(x!=0||y!=0) translate([x,y]) circle(d=bonsai_hole_size);
+        circle(d=bonsai_hole_size*1.5);
+    } else if(bonsai_drainage_style=="Grid"){
+        sx=bonsai_length/(ceil(sqrt(bonsai_hole_count))+1);
+        sy=bonsai_width /(ceil(sqrt(bonsai_hole_count))+1);
+        for(x=[-bonsai_length/2+sx:sx:bonsai_length/2-sx])
+         for(y=[-bonsai_width/2+sy:sy:bonsai_width/2-sy])
+          translate([x,y]) circle(d=bonsai_hole_size);
+    } else if(bonsai_drainage_style=="Clusters"){
+        for(i=[0:bonsai_cluster_pattern-1]){
+            a=i*360/bonsai_cluster_pattern;
+            translate([cos(a)*bonsai_length/4, sin(a)*bonsai_width/4]){
+                circle(d=bonsai_hole_size*1.2);
+                for(j=[0:3]) rotate(j*90) translate([bonsai_hole_size*1.5,0]) circle(d=bonsai_hole_size*0.8);
+            }
+        }
+    } else if(bonsai_drainage_style=="Linear"){
+        for(y=[-bonsai_width/3,0,bonsai_width/3])
+            for(x=[-bonsai_length/3:bonsai_length/6:bonsai_length/3])
+                translate([x,y]) circle(d=bonsai_hole_size);
+    }
+}
+
+// ===== Saucer (thin shell, compact) =====
+module saucer_bonsai(){
+    inner_offset_d = 0; // bonsai sits flat; gap set by saucer_gap
+    inner_d1 = min(bonsai_length,bonsai_width) + 0; // base span reference (we’ll use shape instead)
+
+    // Build by offsets to keep the shape matched
+    difference(){
+        linear_extrude(height=saucer_height) offset(r=saucer_rim + saucer_wall_thickness) bonsai_base_shape();
+        translate([0,0,saucer_floor_thickness])
+            linear_extrude(height=saucer_height) offset(r=max(0, -saucer_gap)) bonsai_base_shape();
+    }
+    if(saucer_ribs){
+        for(i=[0:saucer_rib_count-1]){
+            rotate(i*360/saucer_rib_count)
+                translate([0,0,saucer_floor_thickness])
+                    hull(){ cylinder(h=saucer_rib_height,r=1.6);
+                            translate([min(bonsai_length,bonsai_width)/2 - 10,0,0]) cylinder(h=saucer_rib_height,r=1.6); }
+        }
+    }
+}
+
+// ===== Assembly =====
+module planter_with_features(){
+    difference(){
+        generate_bonsai_planter();
+        if(drainage_holes)
+            translate([0,0,-0.2])
+                linear_extrude(height=(vase_mode? bottom_thickness+6 : bottom_thickness+0.4))
+                    bonsai_drainage_pattern();
+}
+}
+module saucer(){ translate([bonsai_length + 20,0,0]) saucer_bonsai(); }
+
+// ===== Export =====
+if(export_mode=="Planter Only"){
+    planter_with_features();
+    if(generate_saucer) translate([bonsai_length+20,0,0]) saucer_bonsai();
+} else if(export_mode=="Saucer Only"){
+    if(generate_saucer) saucer_bonsai();
+} else { // Both Together
+    planter_with_features();
+    if(generate_saucer) translate([bonsai_length+20,0,0]) saucer_bonsai();
+}
