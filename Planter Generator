@@ -426,20 +426,15 @@ module chevron_planter() {
             base_d = d_top;
 
                         // band index and alternating phase (flip = 180/chevron_count degrees)
-            b = floor(t * chevron_band_count);
-            band_flip_deg = (b % 2 == 1) ? (180 / chevron_count) : 0;
+b = floor(t * chevron_band_count);
+band_flip_deg = (b % 2 == 1) ? (180 / chevron_count) : 0;
 
-            // progress within the current band (0..1)
-            bt = t * chevron_band_count - b;
+// alternate **constant** drift direction per band (planar facet)
+band_sign = (b % 2 == 0) ? 1 : -1;
+local_tilt = band_sign * chevron_tilt;   // fixed angle within the band
 
-            // alternate drift direction per band to form chevrons
-            band_sign = (b % 2 == 0) ? 1 : -1;
-
-            // linear drift across the band, centered (−tilt..+tilt)
-            local_tilt = band_sign * (bt - 0.5) * (chevron_tilt * 2);
-
-            // total phase for this slice
-            phase_deg = band_flip_deg + local_tilt;
+// total phase for this slice
+phase_deg = band_flip_deg + local_tilt;
 
             // emit this slice’s footprint with the computed phase
             translate([0,0,z0])
