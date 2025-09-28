@@ -1,4 +1,4 @@
-// Planter Generator - Vase Mode v4.4.0
+// Planter Generator - Vase Mode v4.5.1
 // by Oohhddaanngg (MTin3D)
 // Spiral-vase planter bodies + conformal saucers. Tuned for 0.8 mm vase mode.
 // Styles (marketing names): Helix, Ripple, Strata, Serif Flow, Chevron
@@ -30,21 +30,21 @@ $fn = base_fn; $fa = 6; $fs = 0.8;
 // Chevron — crisp herringbone facets with architectural depth
 
 // Choose planter body style
-planter_style = "Ripple"; // [Helix, Ripple, Strata, Serif Flow, Chevron]
+planter_style = "Chevron"; // [Helix, Ripple, Strata, Serif Flow, Chevron]
 
 // ==============================
 // [2] Size Options
 // ==============================
 /* [Size Options] */
 // Pick preset (Top x Height, Base) or Custom
-size_preset = "Standard"; // [Custom, Herb Pot (Top100 x H90, base70), Succulent Bowl (Top80 x H50, base65), Seedling Pot (Top102 x H100, base75), Standard Pot (Top152 x H140, base100), Large Pot (Top203 x H180, base140), Orchid Pot (Top140 x H160, base90), Cactus Planter (Top90 x H110, base70)]
+size_preset = "Custom"; // [Custom, Herb Pot (Top100 x H90, base70), Succulent Bowl (Top80 x H50, base65), Seedling Pot (Top102 x H100, base75), Standard Pot (Top152 x H140, base100), Large Pot (Top203 x H180, base140), Orchid Pot (Top140 x H160, base90), Cactus Planter (Top90 x H110, base70)]
 
 // Top outside diameter (mm)
 top_diameter = 120; // [60:5:240]
 // Overall height (mm)
-height = 100; // [50:5:250]
+height = 120; // [50:5:250]
 // Bottom outside diameter (mm)
-bottom_diameter = 80; // [40:5:200]
+bottom_diameter = 120; // [40:5:200]
 
 // ==============================
 // [3] Helix Style Settings (formerly Twisted)
@@ -112,20 +112,22 @@ serif_taper_pct = 3; // [0:1:8]
 // [Chevron Style Settings] (new faceted herringbone look)
 // ==============================
 /* [Chevron Style Settings] */
-// Crisp triangular facets that flip band-to-band to form a herringbone “V”.
+// Crisp trapezoid facets that alternate per band to form a herringbone “V”.
 
 // Facets around the circumference
 chevron_count = 16; // [10:1:28]
 // Facet depth as % of radius
-chevron_depth = 10; // [0:1:16]
+chevron_depth = 12; // [6:1:16]
 // Number of vertical bands (direction alternates each band)
 chevron_band_count = 10; // [6:1:16]
-// Add a gentle phase drift up the height (deg across full height)
-chevron_tilt = 8; // [0:1:30]
+// Ramped per-band tilt (deg span) — alternates L/R by band
+chevron_tilt = 16; // [0:1:30]
+// Number of stable angles across each band (reduces “sawteeth” when >1)
+chevron_phase_steps = 4; // [1:1:8]
 // Edge softening (mm) to slightly bevel facet edges
-chevron_rounding = 0.8; // [0:0.2:1.8]
+chevron_rounding = 0.4; // [0:0.1:1.8]
 // Flat portion of each facet (0 = pointed, 0.8 = broad, photo-like)
-chevron_flat_pct = 0.55; // [0:0.05:0.8]
+chevron_flat_pct = 0.6; // [0:0.05:0.8]
 // Tiny top refinement without changing Size Options
 chevron_scale_top_pct = 0; // [-5:1:5]
 
@@ -183,6 +185,7 @@ export_mode = "Both Together"; // [Planter Only, Saucer Only, Both Together]
 function clampv(x,a,b) = min(max(x,a), b);
 function prand(seed, idx) = ((seed*9301 + idx*49297) % 233280) / 233280;
 function frac(x) = x - floor(x);
+
 // 0..1 trapezoid wave with flat top controlled by 'flat' (0..0.9)
 function trap01(u, flat) =
     let(f = clampv(flat, 0, 0.9))
@@ -265,8 +268,7 @@ module footprint_chevron(d_bot, phase_deg=0){
         for (t = [0:a_count-1])
             let(a = t * 360 / a_count + phase_deg)
             let(u = (a * chevron_count) / 360)                // facet cycle position
-            let(flat01 = clampv(chevron_flat_pct, 0, 0.9))    // 0..0.9
-            let(w = trap01(u, flat01))                        // 0..1 with flat top
+            let(w = trap01(u, chevron_flat_pct))              // 0..1 with flat top
             let(sym = w*2 - 1)                                // -1..+1
             let(off = sym * (chevron_depth/100))              // radial % offset
             let(r = (d_bot/2) * (1 + off))
@@ -404,11 +406,10 @@ module serif_flow_planter() {
     }
 }
 
-// ---- Chevron planter (faceted herringbone using triangular wave with banded phase)
+// ---- Chevron planter (trapezoid facets + per-band ramp with quantized steps)
 module chevron_planter() {
     // Increase slices for sharp facets; keep robust overlap for watertight union
     slices = clampv(round(32*detail_level * (1 + chevron_count/24)), 32, 180);
-    a_count = base_fn;
 
     union() {
         for (i = [0:slices-1]) {
@@ -425,22 +426,31 @@ module chevron_planter() {
             d_top = d_lin * (1 + (chevron_scale_top_pct/100) * t);
             base_d = d_top;
 
-                        // band index and alternating phase (flip = 180/chevron_count degrees)
-b = floor(t * chevron_band_count);
-band_flip_deg = (b % 2 == 1) ? (180 / chevron_count) : 0;
+            // band index and alternating base flip (flip = 180/chevron_count degrees)
+            b = floor(t * chevron_band_count);
+            band_flip_deg = (b % 2 == 1) ? (180 / chevron_count) : 0;
 
-// alternate **constant** drift direction per band (planar facet)
-band_sign = (b % 2 == 0) ? 1 : -1;
-local_tilt = band_sign * chevron_tilt;   // fixed angle within the band
+            // progress within the current band (0..1)
+            bt = t * chevron_band_count - b;
 
-// total phase for this slice
-phase_deg = band_flip_deg + local_tilt;
+            // alternate ramp direction per band (gives the chevron “V”)
+            band_sign = (b % 2 == 0) ? 1 : -1;
+
+            // ramp tilt from −tilt..+tilt across the band
+            local_ramp = band_sign * (bt - 0.5) * (chevron_tilt * 2);
+
+            // optional quantization: snap the ramp to a few stable angles per band
+            steps = max(1, chevron_phase_steps);
+            step_deg = (chevron_tilt * 2) / steps;
+            local_tilt = step_deg * round(local_ramp / step_deg);
+
+            // total phase for this slice
+            phase_deg = band_flip_deg + local_tilt;
 
             // emit this slice’s footprint with the computed phase
             translate([0,0,z0])
                 linear_extrude(height=h_seg)
                     footprint_chevron(base_d, phase_deg);
-
         }
     }
 }
