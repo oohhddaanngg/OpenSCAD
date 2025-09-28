@@ -117,16 +117,17 @@ serif_taper_pct = 3; // [0:1:8]
 // Facets around the circumference
 chevron_count = 16; // [10:1:28]
 // Facet depth as % of radius
-chevron_depth = 10; // [6:1:16]
+chevron_depth = 10; // [0:1:16]
 // Number of vertical bands (direction alternates each band)
 chevron_band_count = 10; // [6:1:16]
 // Add a gentle phase drift up the height (deg across full height)
 chevron_tilt = 8; // [0:1:30]
 // Edge softening (mm) to slightly bevel facet edges
 chevron_rounding = 0.8; // [0:0.2:1.8]
+// Flat portion of each facet (0 = pointed, 0.8 = broad, photo-like)
+chevron_flat_pct = 0.55; // [0:0.05:0.8]
 // Tiny top refinement without changing Size Options
 chevron_scale_top_pct = 0; // [-5:1:5]
-
 
 // ==============================
 // [7] Drainage
@@ -182,7 +183,14 @@ export_mode = "Both Together"; // [Planter Only, Saucer Only, Both Together]
 function clampv(x,a,b) = min(max(x,a), b);
 function prand(seed, idx) = ((seed*9301 + idx*49297) % 233280) / 233280;
 function frac(x) = x - floor(x);
-function tri01(u) = 1 - abs(2*frac(u) - 1);   // 0..1 triangular wave
+// 0..1 trapezoid wave with flat top controlled by 'flat' (0..0.9)
+function trap01(u, flat) =
+    let(f = clampv(flat, 0, 0.9))
+    let(p = frac(u))
+    let(edge = max(0.001, (1 - f)/2))     // rising and falling ramp width
+    (p < edge)       ? p/edge :
+    (p < 1 - edge)   ? 1 :
+                       (1 - p)/edge;
 
 // Presets (ASCII-only to avoid UI quirks)
 function get_preset_dims(p) =
@@ -251,14 +259,16 @@ module footprint_serif(d_bot){
 
 // Chevron footprint at a given phase (deg) for base matching and per-slice use
 module footprint_chevron(d_bot, phase_deg=0){
-    a_count = base_fn;
+    // sample exactly at facet edges + plateaus for planar faces
+    a_count = max(chevron_count*4, 48); // 4 key points per facet cycle
     pts = [
         for (t = [0:a_count-1])
             let(a = t * 360 / a_count + phase_deg)
-            // cycles variable for triangle wave
-            let(u = (a * chevron_count) / 360)
-            // symmetric range -1..+1 then scale by depth
-            let(off = (tri01(u)*2 - 1) * (chevron_depth/100))
+            let(u = (a * chevron_count) / 360)                // facet cycle position
+            let(flat01 = clampv(chevron_flat_pct, 0, 0.9))    // 0..0.9
+            let(w = trap01(u, flat01))                        // 0..1 with flat top
+            let(sym = w*2 - 1)                                // -1..+1
+            let(off = sym * (chevron_depth/100))              // radial % offset
             let(r = (d_bot/2) * (1 + off))
             [ r*cos(a), r*sin(a) ]
     ];
@@ -415,16 +425,27 @@ module chevron_planter() {
             d_top = d_lin * (1 + (chevron_scale_top_pct/100) * t);
             base_d = d_top;
 
-            // band index and alternating phase (flip = 180/chevron_count degrees)
+                        // band index and alternating phase (flip = 180/chevron_count degrees)
             b = floor(t * chevron_band_count);
             band_flip_deg = (b % 2 == 1) ? (180 / chevron_count) : 0;
-            // optional drift up the height
-            tilt_deg = chevron_tilt * t;
+
+            // progress within the current band (0..1)
+            bt = t * chevron_band_count - b;
+
+            // alternate drift direction per band to form chevrons
+            band_sign = (b % 2 == 0) ? 1 : -1;
+
+            // linear drift across the band, centered (−tilt..+tilt)
+            local_tilt = band_sign * (bt - 0.5) * (chevron_tilt * 2);
+
+            // total phase for this slice
+            phase_deg = band_flip_deg + local_tilt;
 
             // emit this slice’s footprint with the computed phase
             translate([0,0,z0])
                 linear_extrude(height=h_seg)
-                    footprint_chevron(base_d, band_flip_deg + tilt_deg);
+                    footprint_chevron(base_d, phase_deg);
+
         }
     }
 }
