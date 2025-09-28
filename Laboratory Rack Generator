@@ -1,7 +1,5 @@
-// Lab Rack Generator v2.9 — 12x75 Test Tube Rack + Antisera Rack
-// Change: Cups now use a conical frustum anchored like Claude's example:
-// each well starts at z = plate_thickness - cup_depth and has height = cup_depth,
-// so removal happens only in the TOP layers (slicer shows growing circles).
+// Lab Rack Generator v2.9 — Spherical cups with correct orientation
+// Fixed: Flipped plate orientation so cups face upward
 
 $fn = 64; $fa = 6; $fs = 0.8;
 
@@ -32,11 +30,11 @@ lead_in_height     = 1.8;  // [0:0.2:3]
 lead_in_factor     = 1.6;  // [1.0:0.05:2.4]
 
 /* [Plate – Cups] */
-cup_depth        = 3.0;      // depth of stabilizing well
-cup_floor_min    = 2.0;      // minimum solid floor under each cup
-cup_taper_angle  = 15;       // degrees; well narrows toward the floor
-cup_drain_enable = false;    // optional tiny cleaning hole
-cup_drain_diam   = 1.2;
+cup_depth        = 4.0;
+cup_floor_min    = 1.0;
+cup_drain_enable = false;
+cup_drain_diam   = 1.0;
+cup_diameter_ratio = 0.85; // [0.7:0.05:0.95] Ratio of cup diameter to hole diameter
 
 /* [End Piece (Press-fit)] */
 pf_cheek_thickness = 8.0;
@@ -69,9 +67,11 @@ lead_in_radius = lead_in_on ? (actual_hole_d*(lead_in_factor-1)/2) : 0;
 
 module warn(m){ echo(str("[WARN] ", m)); }
 if (cup_floor_min < 1.5) warn("cup_floor_min is thin; consider ≥1.5–2.0 mm.");
-if (plate_thickness <= cup_floor_min) warn("plate_thickness must be > cup_floor_min.");
-if (cup_depth > plate_thickness - cup_floor_min)
-    warn("cup_depth exceeds allowed depth; floor would be thinner than cup_floor_min.");
+if (plate_thickness <= cup_depth) warn("plate_thickness must be > cup_depth.");
+
+function _min_border_needed() = pf_visible_overlap + 1.2 + lead_in_radius;
+if (border_left_center  < _min_border_needed())  warn(str("Left border too small; need ≥ ", _min_border_needed()));
+if (border_right_center < _min_border_needed())  warn(str("Right border too small; need ≥ ", _min_border_needed()));
 
 // ---------- Symmetry handling ----------
 function _L() = border_left_center;
@@ -81,25 +81,18 @@ function _B() = (lock_symmetry=="On") ? border_top_center   : border_bottom_cent
 
 // ---------- Grid ----------
 function _pitch_h() = actual_hole_d + wall_thk;
-
 function _cols_auto() = floor( (plate_width  - (_L()+_R())) / _pitch_h() ) + 1;
 function _rows_auto() = floor( (plate_depth  - (_T()+_B())) / _pitch_h() ) + 1;
-
 function _cols() = auto_fit ? max(1,_cols_auto()) : _cols_auto();
 function _rows() = auto_fit ? max(1,_rows_auto()) : _rows_auto();
-
 function _avail_x() = plate_width - (_L()+_R());
 function _avail_y() = plate_depth - (_T()+_B());
 function _occ_x() = actual_hole_d + (_cols()-1)*_pitch_h();
 function _occ_y() = actual_hole_d + (_rows()-1)*_pitch_h();
 function _slack_x() = _avail_x() - _occ_x();
 function _slack_y() = _avail_y() - _occ_y();
-
-function _x0() = (lock_symmetry=="On") ? (_L() + _slack_x()/2 + actual_hole_d/2)
-                                       : (_L() + actual_hole_d/2);
-function _y0() = (lock_symmetry=="On") ? (_T() + _slack_y()/2 + actual_hole_d/2)
-                                       : (_T() + actual_hole_d/2);
-
+function _x0() = (lock_symmetry=="On") ? (_L() + _slack_x()/2 + actual_hole_d/2) : (_L() + actual_hole_d/2);
+function _y0() = (lock_symmetry=="On") ? (_T() + _slack_y()/2 + actual_hole_d/2) : (_T() + actual_hole_d/2);
 function cx(ix) = _x0() + ix*_pitch_h();
 function cy(iy) = _y0() + iy*_pitch_h();
 
@@ -111,46 +104,55 @@ module hole_at(xc,yc){
             cylinder(h=lead_in_height, d1=actual_hole_d*lead_in_factor, d2=actual_hole_d);
 }
 
-// ----- Conical well cutter (Claude-style anchoring from TOP) -----
-module cup_conical_at(xc, yc) {
-    // Enforce floor thickness
-    h_eff = min(cup_depth, max(0.1, plate_thickness - cup_floor_min));
-    if (h_eff < 0.3) warn(str("well depth very shallow (", h_eff, " mm) — slicers may simplify."));
-
-    // Top diameter = hole diameter (for concentric match)
-    d_top = actual_hole_d;
-
-    // Bottom diameter reduced by taper angle over depth h_eff
-    // NOTE: tan() in OpenSCAD expects degrees
-    d_bot = max(0.2, d_top - 2 * tan(cup_taper_angle) * h_eff);
-
-    // Position so the well exists only in the TOP layers:
-    // start Z = plate_thickness - h_eff, height = h_eff
-    translate([xc, yc, plate_thickness - h_eff])
-        cylinder(h = h_eff + 0.001, d1 = d_bot, d2 = d_top, $fn = max(48, $fn));
+// Spherical cup carved from bottom (then entire plate flipped)
+module cup_spherical_at(xc, yc) {
+    h_req = cup_depth;
+    h_max = max(0.1, plate_thickness - cup_floor_min);
+    h_eff = min(h_req, h_max);
     
-    // Optional drain (straight through)
+    if (h_eff < 0.3) warn(str("cup depth very shallow (", h_eff, " mm)."));
+    
+    // Cup opening diameter
+    Ds = actual_hole_d * cup_diameter_ratio;
+    
+    // Calculate sphere radius
+    R = (h_eff*h_eff + (Ds/2)*(Ds/2)) / (2*h_eff);
+    
+    if (is_undef(R) || R <= 0) warn("Invalid sphere radius for cup.");
+    
+    // Position sphere to carve from bottom surface (before flip)
+    z_sphere_center = h_eff - R;
+    
+    // Create the spherical depression
+    translate([xc, yc, z_sphere_center]) 
+        sphere(r = R, $fn = floor(96 * cup_diameter_ratio));
+    
+    // Optional drain hole
     if (cup_drain_enable)
-        translate([xc, yc, -0.2]) cylinder(h = plate_thickness + 0.6, d = cup_drain_diam, $fn = 24);
+        translate([xc, yc, -0.2]) 
+            cylinder(h = plate_thickness + 0.6, d = cup_drain_diam, $fn = 32);
 }
 
 // ---------- plates ----------
 module plate_holes(){
     difference(){
         cube([plate_width, plate_depth, plate_thickness]);
-        for (ix=[0:_cols()-1])
-        for (iy=[0:_rows()-1])
-            hole_at(cx(ix), cy(iy));
+        for (ix=[0:_cols()-1]) for (iy=[0:_rows()-1]) hole_at(cx(ix), cy(iy));
     }
 }
 
-// Bottom plate: solid slab with conical wells cut only from TOP layers
+// Plate with spherical cups - built upside down then flipped
 module plate_cups() {
+    // Flip the entire plate so cups face upward
+    translate([0, plate_depth, 0]) 
+    rotate([180, 0, 0])
     difference() {
         cube([plate_width, plate_depth, plate_thickness]);
-        for (ix=[0:_cols()-1])
-        for (iy=[0:_rows()-1])
-            cup_conical_at(cx(ix), cy(iy));
+        for (ix=[0:_cols()-1]) {
+            for (iy=[0:_rows()-1]) {
+                cup_spherical_at(cx(ix), cy(iy));
+            }
+        }
     }
 }
 
@@ -165,24 +167,18 @@ module end_piece(){
     cheek_h = _stack_height_2tiers();
     difference(){
         cube([cheek_w, cheek_d, cheek_h]);
-        // lower pocket (cups plate)
         translate([0, pf_visible_overlap, pf_bottom_foot])
-            cube([cheek_w+0.1, _pocket_w(), _pocket_h()+0.02]);
-        // upper pocket (holes plate)
+            cube([cheek_w+0.1, _pocket_w(), _pocket_h()+0.02]); // lower pocket (cups plate)
         translate([0, pf_visible_overlap, pf_bottom_foot + plate_thickness + pf_tier_spacing])
-            cube([cheek_w+0.1, _pocket_w(), _pocket_h()+0.02]);
+            cube([cheek_w+0.1, _pocket_w(), _pocket_h()+0.02]); // upper pocket (holes plate)
     }
 }
 
 /* Antisera placeholders */
 module antisera_cheek(){
     linear_extrude(height=as_cheek_thk)
-        polygon(points=[
-            [0,0],
-            [as_cheek_depth,0],
-            [as_cheek_depth, as_tiers*(as_shelf_thk+as_rise)-as_rise],
-            [0,              as_tiers*(as_shelf_thk+as_rise)-as_rise]
-        ]);
+        polygon(points=[[0,0],[as_cheek_depth,0],[as_cheek_depth, as_tiers*(as_shelf_thk+as_rise)-as_rise],
+                        [0,        as_tiers*(as_shelf_thk+as_rise)-as_rise]]);
 }
 module antisera_shelf(){ plate_holes(); }
 
@@ -208,10 +204,17 @@ if (rack_family == "12x75 Test Tube Rack"){
     else if (export_part == "Plate - Holes only") plate_holes();
     else if (export_part == "Plate - Cups only")  plate_cups();
     else if (export_part == "End piece only")     end_piece();
-    else { warn(str("Unknown export_part: ", export_part, " — defaulting to All parts (flat)."));
-           layout_12x75_flat(); }
+    else { warn(str("Unknown export_part: ", export_part, " — defaulting to All parts (flat).")); layout_12x75_flat(); }
 } else {
     if (export_part == "Antisera Rack (all flat)") layout_antisera_flat();
-    else { warn(str("Unknown export_part for Antisera: ", export_part, " — defaulting to Antisera Rack (all flat)."));
-           layout_antisera_flat(); }
+    else { warn(str("Unknown export_part for Antisera: ", export_part, " — defaulting to Antisera Rack (all flat).")); layout_antisera_flat(); }
 }
+
+// Echo design info
+echo("=== Test Tube Rack Configuration ===");
+echo(str("Grid: ", _cols(), " x ", _rows(), " = ", _cols()*_rows(), " positions"));
+echo(str("Plate size: ", plate_width, " x ", plate_depth, " x ", plate_thickness, " mm"));
+echo(str("Hole diameter: ", actual_hole_d, " mm"));
+echo(str("Cup depth: ", min(cup_depth, plate_thickness - cup_floor_min), " mm effective"));
+echo(str("Cup diameter: ", actual_hole_d * cup_diameter_ratio, " mm"));
+echo(str("Sphere radius: ", (cup_depth*cup_depth + (actual_hole_d*cup_diameter_ratio/2)*(actual_hole_d*cup_diameter_ratio/2)) / (2*cup_depth), " mm"));
