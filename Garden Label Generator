@@ -1,0 +1,1200 @@
+// Garden Label with QR Code Generator v1.0
+// Code by MTin3D
+$fn = 64;
+
+/* [Mode Selection] */
+// Choose whether to generate a plant label or the plant care emojis legend.
+generate_mode = "Plant Label"; // [Plant Label, Care Icon Legend]
+
+/* [Presets] */
+preset = "Tomato"; // [Custom,Beans,Broccoli,Carrot,Cucumber,Kale,Lettuce,Onion,Peas,Pepper,Potato,Radish,Spinach,Squash,Tomato,Zucchini,Blueberry,Strawberry,Marigold,Sunflower,Basil,Chives,Cilantro,Dill,Mint,Oregano,Parsley,Rosemary,Sage,Thyme,Aloe Vera,Fiddle Leaf Fig,Monstera,Peace Lily,Philodendron,Pothos,Rubber Plant,Snake Plant,Spider Plant,ZZ Plant]
+
+/* [Label Layout] */
+// Choose which side of the plate will have the QR code or SVG image.
+image_position = "Left"; // [Left,Right]
+// Width of the plant name plate in mm.
+label_width = 140;
+// Height of the plant name plate in mm.
+label_height = 50;
+// Thickness of the plant name plate and stakes in mm.
+thickness = 4;
+// How rounded the corners are.  Set to 0 for sharp corners, increase for more rounded corners.
+corner_radius = 3;
+// Toggle the appearance of the border around the edge of the name plate.
+border_rim = true;
+// How wide the border is in mm.
+rim_width = 1.0;
+
+/* [Label Text] */
+// The plant name regular people use.
+common_name = "";
+// Toggle the scientific name on or off.
+show_scientific_name = true;
+// The plant name scientists and plant nerds use.
+scientific_text = "";
+// Toggle care instruction emojis on or off.
+show_care_icons = true;
+// Plant care emojis (examples: ☀️ for sun, 💧 for water, ❄️ for cold tolerant, 🌡️ for heat loving, 🐝 for pollinator friendly, ⚠️ for toxic to pets). Uses Noto Emoji font regardless of what is chosen below.
+care_icons_text = "";
+// Choose which font you prefer.
+font = "Roboto"; // [Roboto,Calibri,Arial,Lora,Montserrat,Open Sans,Noto Emoji]
+// Regular, bold, or italic.
+font_style = "Bold"; // [Regular,Bold,Italic]
+// Automatically scale text with name plate size. If enabled, manual adjustment of text size and spacing will do nothing.
+auto_scale_text = true;
+// Text size for the common plant name.
+text_size_name = 12;
+// Adjust the common plant name position left to right.
+name_x_offset = 0; // [-30:1:30]
+// Adjust the common plant name position up and down.
+name_y_offset = 0; // [-20:1:20]
+// Text size for scientific name.
+text_size_scientific = 6;
+// Adjust the scientific plant name position left to right.
+scientific_x_offset = 0; // [-30:1:30]
+// Adjust the scientific plant name position up and down.
+scientific_y_offset = 0; // [-20:1:20]
+// Size of plant care instruction emojis.
+text_size_care_icons = 8;
+// Adjust the plant care emoji position left to right.
+care_x_offset = 0; // [-30:1:30]
+// Adjust the plant care emoji position up and down.
+care_y_offset = 0; // [-20:1:20]
+// Vertical spacing between the common plant name and the scientific name.
+text_spacing = 12;
+// Make scientific name bold for better 3D printing.
+scientific_bold = true;
+// Make plant care emojis bold for better 3D printing.
+care_icons_bold = true;
+
+/* [Image Settings] */
+// Choose between QR code or SVG image
+display_type = "QR Code"; // [QR Code, SVG Image]
+// Custom URL for QR code. Keep under 60 characters for best printability - use URL shortener.
+custom_url = "";
+// Upload SVG file - www.svgrepo.com is a good resource for SVG's - note that if you switch back and forth between QR code and SVG, you may have to re-upload the SVG each time to get it to display correctly.
+svg_file = "default.svg"; // Upload SVG file
+// Automatically scale the QR code or SVG image with the size of the name plate.
+auto_scale_image = true;
+// SVG image size in mm
+svg_size = 35;
+// Size of the QR code when auto-scale is off. Base 35mm becomes 39.2mm after auto-scaling for 1.35mm modules.
+qr_size = 35;
+// Manual position adjustments for QR Code & SVG - left to right.
+image_x_offset = 0; // [-30:1:30]
+// Manual position adjustments for QR Code & SVG - up and down.
+image_y_offset = 0; // [-20:1:20]
+// Distance in mm from the edge of the plate to the QR code. Must maintain 4-module quiet zone (5.4mm at 1.35mm modules).
+qr_margin = 7;
+// Indoor = Low error correction, Outdoor = medium error correction
+environment = "Outdoor"; // [Indoor,Outdoor]
+
+/* [Stake Configuration] */
+// Choose 1 centered stake, 2 stakes near the edges, or none to generate just a name plate.
+stake_type = "Dual"; // [Single,Dual,None]  
+// Length in mm from the name plate to the pointed tip.
+stake_length = 75;
+// How wide each base of the stake's connection points to the plate are when you have Dual stakes selected. This widens the transition area of the stake's point when you have Single stake selected.
+stake_width = 12;
+// Length of the pointy part. Increasing this shortens the non-pointy part and decreasing it lengthens the non-pointy part. Setting it to 100 turns it into a weapon, and setting it to 0 turns it into a very small billboard for a train set.
+stake_tip_length = 18;
+// How close to, or far away from, the edges of the plate the stakes will start. 56mm is the maximum when using the default rounded edges before it is no longer connected well. 5mm is the minimum before they start touching each other.
+dual_stake_offset = 45; // Distance from center to each stake (adjust for stability)
+// How wide the base of the single stake connection point to the plate is.  This does nothing if you have Dual stakes selected.
+single_stake_width = 12;
+
+/* [Color Options] */
+// Recommended: Black QR code on white plate, or white QR code on black plate.
+plate_color = "White"; // [White,Black,Red,Orange,Yellow,Green,Blue,Purple,Gray,Brown]
+// Note that QR codes need high contrast to scan properly, so the default color is set to black. Change if you want a different SVG color or are okay with risking poor QR code scanning.
+image_color = "Black"; // [Black,White,Red,Orange,Yellow,Green,Blue,Purple,Gray,Brown]
+// Change the color of the plant name and scientific name.
+text_color = "Red"; // [Black,White,Red,Orange,Yellow,Green,Blue,Purple,Gray,Brown]
+// Change the color of the border around the plate.
+border_color = "Red"; // [Black,White,Red,Orange,Yellow,Green,Blue,Purple,Gray,Brown]
+
+/* [Advanced] */
+// Module size is now automatically calculated for optimal printing (1.35mm at default size)
+// Error correction is set by environment: Indoor (L) = easier printing, Outdoor (M) = weather resistant
+
+// Calculate auto-scaled sizes
+label_scale_factor = label_width / 125; // Scaling relative to original 125mm design (provides 1.12x at default 140mm)
+final_qr_size = auto_scale_image ? qr_size * label_scale_factor : qr_size;
+final_svg_size = auto_scale_image ? svg_size * label_scale_factor : svg_size;
+final_text_size_name = auto_scale_text ? text_size_name * label_scale_factor : text_size_name;
+final_text_size_scientific = auto_scale_text ? text_size_scientific * label_scale_factor : text_size_scientific;
+final_text_size_care_icons = auto_scale_text ? text_size_care_icons * label_scale_factor : text_size_care_icons;
+final_text_spacing = auto_scale_text ? text_spacing * label_scale_factor : text_spacing;
+final_dual_stake_offset = dual_stake_offset * label_scale_factor;
+
+// Optimized preset data with integrated short URLs - [name, scientific, short_url, care_icons]
+function preset_data(p) =
+    // === VEGETABLES (A-Z) ===
+    (p=="Beans") ? ["Beans","Phaseolus vulgaris","https://url.mattflix.media/beans","☀️💧💧🌡️🐝"] :
+    (p=="Broccoli") ? ["Broccoli","Brassica oleracea","https://url.mattflix.media/broccoli","⛅💧💧❄️🐝"] :
+    (p=="Carrot") ? ["Carrot","Daucus carota","https://url.mattflix.media/carrot","☀️💧🌱"] :
+    (p=="Cucumber") ? ["Cucumber","Cucumis sativus","https://url.mattflix.media/cucumber","☀️💧💧💧🌱🐝"] :
+    (p=="Kale") ? ["Kale","Brassica oleracea","https://url.mattflix.media/kale","☀️💧💧❄️"] :
+    (p=="Lettuce") ? ["Lettuce","Lactuca sativa","https://url.mattflix.media/lettuce","⛅💧💧🌱"] :
+    (p=="Onion") ? ["Onion","Allium cepa","https://url.mattflix.media/onion","☀️💧🌱⚠️"] :
+    (p=="Peas") ? ["Peas","Pisum sativum","https://url.mattflix.media/peas","☀️💧💧❄️🐝"] :
+    (p=="Pepper") ? ["Pepper","Capsicum annuum","https://url.mattflix.media/pepper","☀️💧💧🌱🐝"] :
+    (p=="Potato") ? ["Potato","Solanum tuberosum","https://url.mattflix.media/potato","☀️💧💧🌱"] :
+    (p=="Radish") ? ["Radish","Raphanus sativus","https://url.mattflix.media/radish","☀️💧🌱"] :
+    (p=="Spinach") ? ["Spinach","Spinacia oleracea","https://url.mattflix.media/spinach","⛅💧💧❄️"] :
+    (p=="Squash") ? ["Squash","Cucurbita spp.","https://url.mattflix.media/squash","☀️💧💧🌱🐝"] :
+    (p=="Tomato") ? ["Tomato","Solanum lycopersicum","https://url.mattflix.media/tomato","☀️💧💧🌱🐝⚠️"] :
+    (p=="Zucchini") ? ["Zucchini","Cucurbita pepo","https://url.mattflix.media/zucchini","☀️💧💧🌱🐝"] :
+    // === FRUITS (A-Z) ===
+    (p=="Blueberry") ? ["Blueberry","Vaccinium corymbosum","https://url.mattflix.media/blueberry","⛅💧💧🌳🐝"] :
+    (p=="Strawberry") ? ["Strawberry","Fragaria x ananassa","https://url.mattflix.media/strawberry","☀️💧💧🌳🐝"] :
+    // === FLOWERS (A-Z) ===
+    (p=="Marigold") ? ["Marigold","Tagetes patula","https://url.mattflix.media/marigold","☀️💧🌱🐝"] :
+    (p=="Sunflower") ? ["Sunflower","Helianthus annuus","https://url.mattflix.media/sunflower","☀️💧💧🌱🐝"] :
+    // === HERBS (A-Z) ===
+    (p=="Basil") ? ["Basil","Ocimum basilicum","https://url.mattflix.media/basil","☀️💧💧🌡️🐝"] :
+    (p=="Chives") ? ["Chives","Allium schoenoprasum","https://url.mattflix.media/chives","⛅💧💧🌳🐝⚠️"] :
+    (p=="Cilantro") ? ["Cilantro","Coriandrum sativum","https://url.mattflix.media/cilantro","⛅💧💧❄️🐝"] :
+    (p=="Dill") ? ["Dill","Anethum graveolens","https://url.mattflix.media/dill","☀️💧💧🌱🐝"] :
+    (p=="Mint") ? ["Mint","Mentha spp.","https://url.mattflix.media/mint","⛅💧💧💧🌳🐝"] :
+    (p=="Oregano") ? ["Oregano","Origanum vulgare","https://url.mattflix.media/oregano","☀️💧🌳🐝"] :
+    (p=="Parsley") ? ["Parsley","Petroselinum crispum","https://url.mattflix.media/parsley","⛅💧💧🌱🐝"] :
+    (p=="Rosemary") ? ["Rosemary","Salvia rosmarinus","https://url.mattflix.media/rosemary","☀️💧🌳🐝"] :
+    (p=="Sage") ? ["Sage","Salvia officinalis","https://url.mattflix.media/sage","☀️💧🌳🐝"] :
+    (p=="Thyme") ? ["Thyme","Thymus vulgaris","https://url.mattflix.media/thyme","☀️💧🌳🐝"] :
+    // === HOUSEPLANTS (A-Z) ===
+    (p=="Aloe Vera") ? ["Aloe Vera","Aloe barbadensis","https://url.mattflix.media/aloe-vera","☀️💧🏠⚠️"] :
+    (p=="Fiddle Leaf Fig") ? ["Fiddle Leaf Fig","Ficus lyrata","https://url.mattflix.media/fiddle-leaf-fig","☀️💧💧🏠⚠️"] :
+    (p=="Monstera") ? ["Monstera","Monstera deliciosa","https://url.mattflix.media/monstera","⛅💧💧🏠⚠️"] :
+    (p=="Peace Lily") ? ["Peace Lily","Spathiphyllum spp.","https://url.mattflix.media/peace-lily","🌙💧💧🏠⚠️"] :
+    (p=="Philodendron") ? ["Philodendron","Philodendron hederaceum","https://url.mattflix.media/philodendron","⛅💧💧🏠⚠️"] :
+    (p=="Pothos") ? ["Pothos","Epipremnum aureum","https://url.mattflix.media/pothos","⛅💧🏠⚠️"] :
+    (p=="Rubber Plant") ? ["Rubber Plant","Ficus elastica","https://url.mattflix.media/rubber-plant","⛅💧🏠⚠️"] :
+    (p=="Snake Plant") ? ["Snake Plant","Sansevieria trifasciata","https://url.mattflix.media/snake-plant","⛅💧🏠⚠️"] :
+    (p=="Spider Plant") ? ["Spider Plant","Chlorophytum comosum","https://url.mattflix.media/spider-plant","⛅💧💧🏠"] :
+    (p=="ZZ Plant") ? ["ZZ Plant","Zamioculcas zamiifolia","https://url.mattflix.media/zz-plant","⛅💧🏠⚠️"] :
+    ["","","",""];
+
+// Get final values
+pd = preset_data(preset);
+// Use custom text if provided, otherwise use preset defaults
+name_final = len(common_name)>0 ? common_name : pd[0];
+sci_final = len(scientific_text)>0 ? scientific_text : pd[1];
+care_final = len(care_icons_text)>0 ? care_icons_text : (len(pd) > 3 ? pd[3] : "");
+// Use the uploaded SVG file
+svg_final = svg_file;
+
+// Generate URL for QR code
+url_final = (preset=="Custom") ? 
+    (len(custom_url)>0 ? custom_url : str("https://www.google.com/search?q=", name_final, "+plant+care")) :
+    pd[2];
+
+// Label shape
+module label_shape() {
+    offset(r=corner_radius) offset(r=-corner_radius)
+        square([label_width, label_height], center=true);
+}
+
+// Stake modules
+module single_stake() {
+    translate([0, -label_height/2])
+    polygon([
+        [-single_stake_width/2, 0],
+        [single_stake_width/2, 0],
+        [stake_width/2, -stake_length + stake_tip_length],
+        [0, -stake_length],
+        [-stake_width/2, -stake_length + stake_tip_length]
+    ]);
+}
+
+module dual_stakes() {
+    for(x_pos = [-final_dual_stake_offset, final_dual_stake_offset]) {
+        translate([x_pos, -label_height/2])
+        polygon([
+            [-stake_width/2, 0],
+            [stake_width/2, 0],
+            [stake_width/2, -stake_length + stake_tip_length],
+            [0, -stake_length],
+            [-stake_width/2, -stake_length + stake_tip_length]
+        ]);
+    }
+}
+
+// Legend module for plant care emoji meanings
+module legend_shape() {
+    offset(r=corner_radius) offset(r=-corner_radius)
+        square([140, 175], center=true); 
+}
+
+module legend_profile() {
+    union() {
+        legend_shape();
+        if(stake_type == "Single") {
+            // Single centered stake for legend
+            translate([0, -87.5])
+            polygon([
+                [-single_stake_width/2, 0],
+                [single_stake_width/2, 0],
+                [stake_width/2, -stake_length + stake_tip_length],
+                [0, -stake_length],
+                [-stake_width/2, -stake_length + stake_tip_length]
+            ]);
+        } else if(stake_type == "Dual") {
+            // Dual stakes for legend
+            for(x_pos = [-45, 45]) {
+                translate([x_pos, -87.5]) 
+                polygon([
+                    [-stake_width/2, 0],
+                    [stake_width/2, 0],
+                    [stake_width/2, -stake_length + stake_tip_length],
+                    [0, -stake_length],
+                    [-stake_width/2, -stake_length + stake_tip_length]
+                ]);
+            }
+        }
+        // If stake_type == "None", no stakes are added
+    }
+}
+
+module care_icon_legend() {
+    // Legend title
+    translate([0, 75, 3])
+        linear_extrude(1)
+            text("Garden Emoji Legend", size=9, halign="center", valign="center",
+                 font=str(font, ":style=Bold"));
+    
+    // Icon meanings - each row has emoji (left) and description (right)
+    legend_items = [
+        ["☀️", "Full Sun"],
+        ["⛅", "Partial Sun"],
+        ["🌙", "Low Light / Shade"],
+        ["💧", "1 Water - Rarely"],
+        ["💧", "2 Waters - Often"],
+        ["💧", "3 Waters - Frequently"],
+        ["❄️", "Cold Season Plant"],
+        ["🌡️", "Warm Season Plant"],
+        ["🌱", "Easy to Grow"],
+        ["🌳", "Perennial"],
+        ["🏠", "Indoor Plant"],
+        ["🐝", "Pollinator Friendly"],
+        ["⚠️", "Toxic to Pets"]
+    ];
+    
+    // Position each legend item
+    for(i = [0:len(legend_items)-1]) {
+        y_position = 60 - (i * 11);  
+        
+        // Emoji (using Noto Emoji font)
+        translate([-40, y_position, 3])
+            linear_extrude(1)
+                text(legend_items[i][0], size=7, halign="left", valign="center",
+                     font="Noto Emoji:style=Regular");
+        
+        // Description (using regular font selected by user)
+        translate([-20, y_position, 3])
+            linear_extrude(1)
+                text(legend_items[i][1], size=5, halign="left", valign="center",
+                     font=str(font, ":style=Regular"));
+    }
+}
+
+module full_profile() {
+    union() {
+        label_shape();
+        if(stake_type == "Single") {
+            single_stake();
+        } else if(stake_type == "Dual") {
+            dual_stakes();
+        }
+    }
+}
+
+// QR Code positioning with manual offset support
+qr_x_auto = (image_position == "Left") ? 
+    -label_width/2 + qr_margin + final_qr_size/2 :
+    label_width/2 - qr_margin - final_qr_size/2;
+
+// Apply manual offset when auto-scale is off
+qr_x_offset = auto_scale_image ? qr_x_auto : qr_x_auto + image_x_offset;
+qr_y_offset = auto_scale_image ? 0 : image_y_offset;
+
+// Text positioning margins - must respect QR quiet zone
+text_margin = 6; // Base margin
+// Add extra spacing from QR to maintain quiet zone + visual balance
+qr_text_spacing = 8; // Total space between QR edge and text start
+text_x_start = (image_position == "Left") ?
+    (-label_width/2 + qr_margin + final_qr_size + qr_text_spacing) :
+    (-label_width/2 + rim_width + text_margin);
+
+// Calculate available width for text, staying inside the border
+// Add extra margin from right edge when QR is on left
+right_edge_buffer = (image_position == "Left") ? 8 : 0;  // Extra space from right border when QR on left
+text_available_width = (image_position == "Left") ?
+    (label_width/2 - rim_width - text_margin - right_edge_buffer) - (-label_width/2 + qr_margin + final_qr_size + text_margin) :
+    (label_width/2 - qr_margin - final_qr_size - text_margin) - (-label_width/2 + rim_width + text_margin);
+
+// Auto-scale text if it's too long
+// Adjust this multiplier to fine-tune auto-fit width calculation for plant's common name. Approximate width per character in mm.
+name_char_width = 0.7; // Approximate width per character for bold
+// Adjust this multiplier to fine-tune auto-fit width for scientific name calculation. Approximate width per character in mm.
+sci_char_width = 0.65; // Approximate width per character for italic
+
+name_estimated_width = len(name_final) * final_text_size_name * name_char_width;
+sci_estimated_width = len(sci_final) * final_text_size_scientific * sci_char_width;
+
+// Reduce available width to ensure clearance from QR code
+// When QR is on right, subtract extra space for quiet zone
+qr_clearance_buffer = (image_position == "Right") ? 6 : 0;
+text_available_width_adjusted = text_available_width - qr_clearance_buffer;
+
+// Minimum space from text & emojis to the right edge of the plate.
+min_right_margin = 8;
+// Minimum space between lines of text.
+min_vertical_spacing = 5;
+// Extra spacing between name and scientific name only, for better readability.
+min_name_sci_spacing = 7;
+// Don't scale below 4 or risk making text unreadable.
+min_text_size = 4; 
+
+// Calculate safe width considering right margin
+safe_text_width = text_available_width_adjusted - min_right_margin;
+
+// Calculate individual scale factors with safety limits
+name_scale_factor = min(1, safe_text_width / name_estimated_width);
+sci_scale_factor = min(1, safe_text_width / sci_estimated_width);
+
+// For plant care emojis, calculate based on actual emoji count with progressive multiplier
+emoji_count = len(care_final) > 0 ? len(care_final) : 0;
+// Fine-tuned multiplier for emoji counts
+emoji_multiplier = emoji_count <= 3 ? 0.85 : 
+                   emoji_count <= 4 ? 0.9 : 
+                   emoji_count <= 5 ? 0.95 : 
+                   emoji_count <= 6 ? 1.1 : 
+                   emoji_count <= 7 ? 1.2 : 1.3;
+care_width_estimate = emoji_count * final_text_size_care_icons * emoji_multiplier;
+care_scale_factor = min(1, safe_text_width / care_width_estimate);
+
+// Limits the maximum font size for the common name - necessary to prevent overly huge text wth short names due to the autoscaling text feature.
+max_name_size = 10;
+// Limits the maximum font size for the scientific name to prevent weird autoscaling text behavior.
+max_scientific_size = 7;
+// Limits the plant care emoji size - can be hard to keep them from trying to move off the plate if there are too many.
+max_care_size = 9; 
+
+// Only apply auto-fitting when auto_scale_text is true
+scaled_text_size_name = auto_scale_text ? 
+    min(max_name_size, max(min_text_size, final_text_size_name * name_scale_factor)) : 
+    final_text_size_name;
+    
+scaled_text_size_scientific = auto_scale_text ? 
+    min(max_scientific_size, max(min_text_size, final_text_size_scientific * sci_scale_factor)) : 
+    final_text_size_scientific;
+    
+// Care icons use manual size, only scale down if they don't fit
+scaled_text_size_care_icons = auto_scale_text && (care_width_estimate > safe_text_width) ? 
+    final_text_size_care_icons * care_scale_factor : 
+    final_text_size_care_icons;
+
+// If scientific name is extra long, apply additional reduction but respect minimum
+if(len(sci_final) > 20) {
+    scaled_text_size_scientific = max(min_text_size, scaled_text_size_scientific * 0.85);
+}
+
+echo(str("Safe text width: ", safe_text_width, "mm (with ", min_right_margin, "mm margin)"));
+echo(str("Individual scaling - Name: ", name_scale_factor, ", Scientific: ", sci_scale_factor, ", Care: ", care_scale_factor));
+echo(str("Final sizes - Name: ", scaled_text_size_name, "mm, Scientific: ", scaled_text_size_scientific, "mm, Care: ", scaled_text_size_care_icons, "mm"));
+
+// Text module
+module label_text() {
+    // Calculate number of active text lines
+    has_scientific = show_scientific_name && len(sci_final)>0;
+    has_care_icons = show_care_icons && len(care_final)>0;
+    num_lines = 1 + (has_scientific ? 1 : 0) + (has_care_icons ? 1 : 0);
+    
+    // Dynamic vertical spacing based on text sizes
+    name_height = scaled_text_size_name;
+    sci_height = scaled_text_size_scientific;
+    care_height = scaled_text_size_care_icons;
+    
+    // Calculate total height needed with minimum spacing
+    total_text_height = (has_scientific ? sci_height : 0) + 
+                       (has_care_icons ? care_height : 0) + 
+                       name_height +
+                       (num_lines - 1) * min_vertical_spacing;
+    
+    // If text is too tall, compress spacing (but keep minimum)
+    available_height = label_height - 10; // Leave 5mm margin top and bottom
+    if(total_text_height > available_height) {
+        // Text won't fit even with minimum spacing - scale everything down proportionally
+        height_scale = available_height / total_text_height;
+        scaled_text_size_name = scaled_text_size_name * height_scale;
+        scaled_text_size_scientific = scaled_text_size_scientific * height_scale;
+        scaled_text_size_care_icons = scaled_text_size_care_icons * height_scale;
+    }
+    
+    // Calculate actual spacing to use
+    if(num_lines == 1) {
+        // Just plant name, center it
+        translate([text_x_start + name_x_offset, 0 + name_y_offset])
+            text(name_final, size=scaled_text_size_name, halign="left", valign="center",
+                 font=str(font, ":style=", font_style));
+    } else if(num_lines == 2) {
+        // Two lines with proper spacing
+        line_spacing = has_scientific ? 8 : 6;
+        
+        translate([text_x_start + name_x_offset, line_spacing + name_y_offset])
+            text(name_final, size=scaled_text_size_name, halign="left", valign="center",
+                 font=str(font, ":style=", font_style));
+        
+        if(has_scientific) {
+            translate([text_x_start + scientific_x_offset, -line_spacing + scientific_y_offset])
+                text(sci_final, size=scaled_text_size_scientific, halign="left", valign="center",
+                     font=str(font, ":style=", scientific_bold ? "Bold Italic" : "Italic"));
+        } else if(has_care_icons) {
+            translate([text_x_start + care_x_offset, -line_spacing - 2 + care_y_offset])
+                text(care_final, size=scaled_text_size_care_icons, halign="left", valign="center",
+                     font=str("Noto Emoji:style=", care_icons_bold ? "Bold" : "Regular"));
+        }
+    } else if(num_lines == 3) {
+        // Three lines with better spacing
+        translate([text_x_start + name_x_offset, 15 + name_y_offset])
+            text(name_final, size=scaled_text_size_name, halign="left", valign="center",
+                 font=str(font, ":style=", font_style));
+        translate([text_x_start + scientific_x_offset, 0 + scientific_y_offset])
+            text(sci_final, size=scaled_text_size_scientific, halign="left", valign="center",
+                 font=str(font, ":style=", scientific_bold ? "Bold Italic" : "Italic"));
+        translate([text_x_start + care_x_offset, -13 + care_y_offset])
+            text(care_final, size=scaled_text_size_care_icons, halign="left", valign="center",
+                 font=str("Noto Emoji:style=", care_icons_bold ? "Bold" : "Regular"));
+    }
+}
+
+// Four-layer structure for multi-color printing
+
+if(generate_mode == "Plant Label") {
+    // Layer 1: Base plate (0 to 3mm)
+    color(plate_color) 
+        linear_extrude(3) 
+        full_profile();
+
+    // Layer 2: QR modules or SVG (3mm to 4mm) 
+    if(display_type == "QR Code") {
+        // Set error correction based on environment
+        ec_final = (environment == "Indoor") ? "L" : "M";
+        
+        echo(str("Environment: ", environment, ", Error Correction: ", ec_final));
+        
+        // Calculate QR version based on URL length
+        url_bytes = len(url_final);
+        
+        // Determine QR version and module count based on data size and EC level
+        qr_version = 
+            (ec_final == "L") ? (
+                url_bytes <= 25 ? 1 :
+                url_bytes <= 47 ? 2 :
+                url_bytes <= 77 ? 3 :
+                url_bytes <= 114 ? 4 :
+                5
+            ) :
+            (ec_final == "M") ? (
+                url_bytes <= 20 ? 1 :
+                url_bytes <= 38 ? 2 :
+                url_bytes <= 61 ? 3 :
+                url_bytes <= 90 ? 4 :
+                5
+            ) : 3;
+        
+        // Calculate module count from version
+        qr_modules = 17 + (4 * qr_version);
+        
+        // Warn if URL is too long
+        if(qr_version > 3) {
+            echo(str("WARNING: Custom URL creates Version ", qr_version, " QR (", qr_modules, " modules)"));
+            echo("         Consider using a URL shortener for better printability");
+        }
+        
+        // Calculate actual module size to fit within QR area
+        actual_module_size = final_qr_size / qr_modules;
+        
+        echo(str("QR Info: URL=", url_bytes, " bytes, Version=", qr_version, ", Modules=", qr_modules));
+        echo(str("QR Size: ", final_qr_size, "mm, Module size=", actual_module_size, "mm"));
+        
+        // Alert if modules are getting too small
+        if(actual_module_size < 1.2) {
+            echo(str("CAUTION: Module size ", actual_module_size, "mm may be difficult to print reliably"));
+        }
+        
+        color(image_color)
+        translate([qr_x_offset, qr_y_offset, 3])
+        linear_extrude(1)
+        scale([actual_module_size, actual_module_size, 1])
+        qr(url_final, error_correction=ec_final, width=qr_modules, 
+           height=qr_modules, thickness=0, center=true);
+    }
+
+    // Layer 2b: SVG Image (3mm to 4mm)
+    if(display_type == "SVG Image" && svg_final != "default.svg" && len(svg_final) > 0) {
+        color(image_color)
+        translate([qr_x_offset, qr_y_offset, 3])linear_extrude(1)
+        resize([final_svg_size, 0], auto=[true,true,false])
+            import(svg_final, center=true);
+    }
+
+    // Layer 3: Border (3mm to 4mm)
+    if(border_rim && rim_width > 0) {
+        color(border_color)
+        translate([0, 0, 3])
+        linear_extrude(1)
+        difference() {
+            label_shape();
+            offset(delta=-rim_width) label_shape();
+        }
+    }
+
+    // Layer 4: Text (3mm to 4mm)
+    color(text_color)
+    translate([0, 0, 3])
+    linear_extrude(1)
+    label_text();
+    
+} else if(generate_mode == "Care Icon Legend") {
+    // Generate the legend instead
+    color(plate_color) 
+        linear_extrude(3) 
+        legend_profile();
+    
+    // Border for legend
+    if(border_rim && rim_width > 0) {
+        color(border_color)
+        translate([0, 0, 3])
+        linear_extrude(1)
+        difference() {
+            legend_shape();
+            offset(delta=-rim_width) legend_shape();
+        }
+    }
+    
+    // Legend content
+    color(text_color)
+        care_icon_legend();
+}
+
+/* [Hidden] */
+// ===== COMPLETE QR CODE LIBRARY =====
+module qr(message, error_correction="M", width=100, height=100, thickness=1, center=false, mask_pattern=0, encoding="UTF-8") 
+    qr_custom(message, error_correction, width, height, thickness, center, mask_pattern, encoding) {
+        default_module();
+        default_position_pattern();
+        default_alignment_pattern();
+}
+module qr_custom(message, error_correction="M", width=100, height=100, thickness=1, center=false, mask_pattern=0, encoding="UTF-8") {
+    ec_lvl =
+        error_correction == "L" ? EC_L :
+        error_correction == "M" ? EC_M :
+        error_correction == "Q" ? EC_Q :
+        error_correction == "H" ? EC_H :
+        undef;
+    assert(ec_lvl >= EC_L && ec_lvl <= EC_H, "error_correction must be \"L\", \"M\", \"Q\" or \"H\"");
+
+    enc =
+        encoding == "Shift_JIS" ? ENC_SJIS :
+        encoding == "UTF-8" ? ENC_UTF8 :
+        undef;
+    assert(enc >= ENC_SJIS && enc <= ENC_UTF8, "encoding must be \"UTF-8\" or \"Shift_JIS\"");
+
+    message_bytes = str2bytes(message);
+
+    ver = get_version(len(message_bytes), ec_lvl, enc);
+    size = version2size(ver);
+
+    bits = encode_message(message_bytes, ec_lvl, mask_pattern, ver, enc);
+
+    positions = data_bit_positions(size);
+
+    translate(center ? [-width/2, -height/2, 0] : [0,0,0])
+    extrude_or_2d(thickness)
+    scale([width/size, height/size]) {
+        // Position patterns
+        for(i=[[0,6],[size-7,6],[0,size-1]])
+            translate([i[0], size-1-i[1], 0])
+            children(1);
+        // Timing patterns
+        for(x=[8:size-1-8])
+            if (x%2 == 0)
+            module_1(size, x, 6) children(0);
+        for(y=[8:size-1-8])
+            if (y%2 == 0)
+            module_1(size, 6, y) children(0);
+        // Alignment patterns
+        if (ver >= 2) {
+            n_pats = n_alignment_patterns(ver);
+            pat_step = alignment_pattern_step(ver);
+            pat_last = size-1-6;
+            pat_coords = concat([6], [
+                for(i=[0:max(0, n_pats-2)]) pat_last-i*pat_step
+            ]);
+            for(y=pat_coords,x=pat_coords)
+                if (!(
+                    (x == 6 && y == 6) ||
+                    (x == 6 && y == pat_last) ||
+                    (x == pat_last && y == 6)
+                ))
+                translate([x-2, size-1-y-2, 0])
+                children(2);
+        }
+        // Version information
+        if(ver >= 7 && ver <= 10) {
+            verinf = verinf_bits_v7_10(ver);
+            for(i=[0:17])
+                if (verinf[17-i])
+                module_1(size, floor(i/3), size-11+i%3) children(0);
+            for(i=[0:17])
+                if (verinf[17-i])
+                module_1(size, size-11+i%3, floor(i/3)) children(0);
+        }
+
+        // Format info
+        fmtinf = fmtinf_bits(ec_lvl, mask_pattern);
+        for(i=[0:7])
+            if (fmtinf[14-i])
+            module_1(size, 8, i <= 5 ? i : i+1) children(0);;
+        for(i=[8:14])
+            if (fmtinf[14-i])
+            module_1(size, 15-(i <= 8 ? i : i+1), 8) children(0);;
+        for(i=[0:7])
+            if (fmtinf[14-i])
+            module_1(size, size-1-i, 8) children(0);;
+        for(i=[8:14])
+            if (fmtinf[14-i])
+            module_1(size, 8, size-1-6+i-8) children(0);;
+        module_1(size, 8, size-1-7) children(0);;
+        // Modules
+        for(p=positions) {
+            x = p[0];
+            y = p[1];
+            i = p[2];
+            val = apply_mask_pattern(
+                bits[i],
+                x, y, mask_pattern
+            );
+            if (val)
+                module_1(size, x, y) children(0);
+        }
+    }
+}
+
+//@PRIVATE
+module default_module() {
+    square([1, 1]);
+}
+
+module default_position_pattern() union() {
+    difference() {
+        square(7);
+        translate([1, 1])
+            square(5);
+    }
+    translate([2, 2])
+        square(3);
+}
+
+module default_alignment_pattern() union() {
+    difference() {
+        square(5);
+        translate([1, 1])
+            square(3);
+    }
+    translate([2, 2])
+        square(1);
+}
+
+module module_1(size, x, y) {
+    epsilon=0.0001; // ensures adjacent modules fuse together when rendering
+    translate([x-epsilon, size-1-y-epsilon, 0])
+        scale([1+2*epsilon, 1+2*epsilon, 1])
+        children(0);
+}
+
+// Applies linear_extrude(thickness) only if thickness > 0
+module extrude_or_2d(thickness) {
+    if (thickness == 0) {
+        children(0);
+    } else {
+        linear_extrude(thickness)
+            children(0);
+    }
+}
+
+function data_bit_positions(size, index=0, pos=undef, acc=[]) =
+    let(nextpos=next_module_position(pos, size))
+    nextpos == undef ? acc :
+    let(app=concat([nextpos[0], nextpos[1]], index))
+    data_bit_positions(size, index+1, nextpos, concat([app], acc));
+
+//
+// QR code general functions
+//
+// Error correction levels
+EC_L = 0; // low      (7% recovery)
+EC_M = 1; // medium   (15% recovery)
+EC_Q = 2; // quartile (25% recovery)
+EC_H = 3; // high     (30% recovery)
+
+// Encodings supported by this library
+ENC_SJIS = 0; // Shift Japanese International Standards (standard QR code encoding)
+ENC_UTF8 = 1; // Unicode
+
+function version2size(ver) = 17+4*ver;
+function size2version(size) = (size-17)/4;
+
+function do_get_version(msg_bytelen, ec_lvl, ver, encoding) =
+    ver > 3 ? 3 :  // Cap at V3 for our use case
+    get_max_msg_bytelen(ver, ec_lvl, encoding) >= msg_bytelen ?
+        ver :
+        do_get_version(msg_bytelen, ec_lvl, ver+1, encoding);
+
+// Picks the right QR code size (called version) for
+// the given message length and error correction level
+function get_version(msg_bytelen, ec_lvl, encoding) =
+    do_get_version(msg_bytelen, ec_lvl, 1, encoding);
+
+// Applies mask pattern 0 only
+function apply_mask_pattern(val, x, y, pat) =
+    ((y + x) % 2 == 0 ? !val : val);
+
+//
+// QR code message encoding
+//
+function get_max_msg_bytelen(ver, ec_lvl, encoding) =
+    let(maxbytes=ectab[ver-1][ec_lvl][0])
+    let(msg_len_bytes=ver <= 9 ? 1 : 2)
+    let(extra_bytes= // see data_codewords() for what these do
+        encoding == ENC_SJIS ? 1 :
+        encoding == ENC_UTF8 ? 2 :
+        undef)
+    maxbytes - msg_len_bytes - extra_bytes;
+
+// Performs a gf2^8 finite field multiplication
+function gf256_mul(a, b) =
+    a == 0 || b == 0 ? 0 :
+    gf256_exp[
+        (gf256_log[a] + gf256_log[b]) % 255
+    ];
+
+// Performs gf2^8 polynomial long division of data_cws by gp
+function do_ec_codewords(n, data_cws, gp, res, i) =
+    i >= len(data_cws) ?
+        res :
+    let (lt = xor_byte(data_cws[i], res[0]))
+    let (res = [ for(i=[1:len(res)-1]) res[i] ])
+    let (res = concat(res, [0]))
+    let (res = [ for(i=[0:n-1])
+        xor_byte(res[i], gf256_mul(gp[i], lt))
+    ])
+    do_ec_codewords(n, data_cws, gp, res, i+1);
+
+// Generates n error correction codewords for data_cws
+function ec_codewords(n, data_cws) =
+    do_ec_codewords(n, data_cws, generator_polynomials[n], [ for(i=[0:n]) 0 ], 0);
+
+// Error correction patterns converted to decimal
+ec_pats = [
+    1,
+    0,
+    3,
+    2
+];
+
+// Look up format info with error correction
+function fmtinf_bits(ec_lvl, mask_pat) =
+    // equivalent to: ec_lvl << 3 | mask_pat
+    fmtinf_strs[ec_pats[ec_lvl] * pow2[3] + mask_pat];
+
+// Pads bytes with add additional bytes
+// The padding bytes alternate between the
+// values 236 and 17
+function pad_bytes(bytes, add) =
+    [ for(i=[0:len(bytes)+add-1])
+        i < len(bytes) ?
+            bytes[i] :
+        (i-len(bytes)) % 2 == 0 ? 236 : 17
+    ];
+
+// Encode msg as data codewords, including the header
+// and padding
+// Returns a byte stream
+function data_codewords(msg_bytes, ec_lvl, ver, encoding) =
+    let(max_msg_bytes=get_max_msg_bytelen(ver, ec_lvl, encoding))
+    let(msg_len_bits=bytes2bits(ver <= 9 ?
+        [ len(msg_bytes) ] :
+        [ floor(len(msg_bytes)/pow2[8]), len(msg_bytes) ]))
+    let(mode=
+        encoding == ENC_SJIS ? [0,1,0,0] :
+        encoding == ENC_UTF8 ? [0,1,1,1] :
+        undef)
+    let(eci_enc=
+        encoding == ENC_SJIS ? [] :
+        encoding == ENC_UTF8 ? bytes2bits([26]) :
+        undef)
+    let(eci_mode=
+        encoding == ENC_SJIS ? [] :
+        encoding == ENC_UTF8 ? [0,1,0,0] :
+        undef)
+    let(terminator=
+        encoding == ENC_SJIS ? [0,0,0,0] :
+        encoding == ENC_UTF8 ? (
+            // the terminator may be omitted if the
+            // message fits perfectly into the maximum
+            // number of bytes
+            len(msg_bytes) == max_msg_bytes ?
+                [] : [0,0,0,0,0,0,0,0]
+        ) :
+        undef)
+    let(bits=concat(
+        mode,
+        eci_enc,
+        eci_mode,
+        msg_len_bits,
+        bytes2bits(msg_bytes),
+        terminator
+    ))
+    let(pad_amt=max_msg_bytes
+        -len(msg_bytes)
+        -(len(terminator) == 8 ? 1 : 0))
+    pad_bytes(bits2bytes(bits), pad_amt);
+
+// Splits the data codewords into the appropriate blocks
+function data_blocks(data_cws, ec_lvl, ver) =
+    let(n_blocks_grp1=ectab[ver-1][ec_lvl][2])
+    let(n_blocks_grp2=ectab[ver-1][ec_lvl][4])
+    let(grp1_block_size=ectab[ver-1][ec_lvl][3])
+    let(grp2_block_size=ectab[ver-1][ec_lvl][5])
+    [ for(i=[0:n_blocks_grp1+n_blocks_grp2-1])
+        let(block_offset=i < n_blocks_grp1 ?
+            i*grp1_block_size :
+            n_blocks_grp1*grp1_block_size + (i-n_blocks_grp1)*grp2_block_size)
+        let(block_size=i < n_blocks_grp1 ? grp1_block_size : grp2_block_size)
+        [ for(j=[0:block_size-1])
+            data_cws[block_offset+j]
+        ]];
+
+function interleave_codewords(blocks) =
+    [ for(i=[0:max([ for(b=blocks) len(b) ])-1])
+        for(j=[0:len(blocks)-1])
+            if(i < len(blocks[j]))
+                blocks[j][i]
+    ];
+
+function ec_blocks(data_blocks, ec_lvl, ver) =
+    let(ec_n=ectab[ver-1][ec_lvl][1])
+    [ for(block=data_blocks)
+        ec_codewords(ec_n, block) ];
+
+// Get final encoded data including error
+// correction as bits
+function encode_message(msg_bytes, ec_lvl, mask_pattern, ver, encoding) =
+    let(data_blocks=data_blocks(data_codewords(msg_bytes, ec_lvl, ver, encoding), ec_lvl, ver))
+    let(data_cws=interleave_codewords(data_blocks))
+    let(ec_blocks=ec_blocks(data_blocks, ec_lvl, ver))
+    let(ec_cws=interleave_codewords(ec_blocks))
+    concat(
+        bytes2bits(data_cws), // data codewords
+        bytes2bits(ec_cws) // error correction
+    );
+
+
+//
+// QR code module placement
+//
+// Gets the maximum alignment patterns per row /
+// column, NOT the overall total
+function n_alignment_patterns(ver) =
+    ver == 1 ? 0 :
+    floor(ver/7)+2;
+
+// Distance between alignment patterns
+// (excluding the first one which is
+// always at x=6)
+function alignment_pattern_step(ver) =
+    let(size=version2size(ver))
+    let(n=n_alignment_patterns(ver))
+    2*ceil((size-1-12)/(2*(n-1)));
+
+// x can be either x or y; does not account
+// for illegal positions
+function coord_is_in_alignment_pattern(x, size) =
+    let(ver=size2version(size))
+    let(s=alignment_pattern_step(ver))
+    ver == 1 ? false :
+    (x >= 4 && x < 9) ||
+    (
+        (x > 6+2) &&
+        ((s+size-1-6+2-x)%s) < 5
+    );
+
+function region_is_in_bounds(x, y, size) =
+    x >= 0 && x < size &&
+    y >= 0 && y < size;
+
+function region_is_data(x, y, size) =
+    region_is_in_bounds(x, y, size) &&
+    // position squares and format info
+    !(
+        (x < 9 && y < 9) ||
+        (x < 9 && y > size-9) ||
+        (y < 9 && x > size-9)
+    ) &&
+    // version info
+    !(
+        size >= version2size(7) && (
+            (x < 6 && y > size-12) ||
+            (y < 6 && x > size-12)
+        )
+    ) &&
+    // timing pattern
+    !(x == 6 || y == 6) &&
+    // alignment pattern
+    !(
+        size > version2size(1) &&
+        !(
+            // illegal position
+            // for alignment patterns
+            // (intersecting with
+            // position pattern)
+            (x == size-9 && y < 9) ||
+            (y == size-9 && x < 9)
+        ) &&
+        (
+            coord_is_in_alignment_pattern(x, size) &&
+            coord_is_in_alignment_pattern(y, size)
+        )
+    );
+
+// Finds the next free module starting
+// from x, y while going in the y-direction
+// ydir in a right-to-left zig-zag
+function find_next_free_module(x, y, ydir, size, depth=0) =
+    region_is_data(x, y, size) ? [x, y] :
+    region_is_data(x-1, y, size) ? [x-1, y] :
+    find_next_free_module(x, y+ydir, ydir, size, depth+1);
+
+function next_module_position(prev, size, depth=0) =
+    prev == undef ? [size-1, size-1] :
+    let(eff_x=
+        prev[0] < 6 ? prev[0] :
+        prev[0]-1)
+    let(ydir=
+        eff_x % 4 < 2 ? 1 : -1)
+    let(right=eff_x % 2 == 1)
+    let(x=
+        right ? prev[0]-1 : prev[0]+1)
+    let(y=
+        right ? prev[1] : prev[1] + ydir)
+    !region_is_in_bounds(x, y, size) ? (
+        x < 2 ? undef :
+        let(x=
+            x == 8 ? x-3 : x-2) // go 1 further left if module would collide with timing pattern
+        find_next_free_module(x, y, -ydir, size)
+    ) :
+    !region_is_data(x, y, size) ? (
+        region_is_data(x-1, y, size) ? [x-1, y] :
+        next_module_position([x-1, y], size, depth+1)
+    ) :
+    [x, y];
+
+//
+// Bit operation utils (not specific to QR)
+//
+pow2=[1,2,4,8,16,32,64,128,256,512,1024,2048,4096,8192,16384,32768];
+char_nums = [];
+
+function xor(a, b) = (a || b) && !(a && b);
+
+function xor_byte(a, b) =
+    let(ba=bytes2bits([a]), bb=bytes2bits([b]))
+    bits2byte([ for (i=[0:8-1]) xor(ba[i], bb[i]) ? 1 : 0 ]);
+
+function is_bit_set(val, idx) =
+    floor(val / pow2[7-idx%8]) % 2 == 1;
+
+function bits2byte(bits) =
+    bits[0]*pow2[7] +
+    bits[1]*pow2[6] +
+    bits[2]*pow2[5] +
+    bits[3]*pow2[4] +
+    bits[4]*pow2[3] +
+    bits[5]*pow2[2] +
+    bits[6]*pow2[1] +
+    bits[7]*pow2[0];
+
+// Truncating right bitshift
+function rsh(x, n) =
+    floor(x/pow(2,n));
+
+function bittrunc(x, nbits) =
+    x%pow(2,nbits);
+
+function do_str2bytes(cps, idx=0, acc=[]) =
+    idx >= len(cps) ? acc :
+    cps[idx] <= 127 ?
+        do_str2bytes(cps, idx+1, concat(acc, cps[idx])) :
+    cps[idx] <= 2047 ?
+        do_str2bytes(cps, idx+1, concat(
+            acc,
+            128+64+rsh(cps[idx],6),
+            128+bittrunc(cps[idx],6)
+        )) :
+    cps[idx] <= 65535 ?
+        do_str2bytes(cps, idx+1, concat(
+            acc,
+            128+64+32+rsh(cps[idx],12),
+            128+bittrunc(rsh(cps[idx],6),6),
+            128+bittrunc(cps[idx],6)
+        )) :
+    cps[idx] <= 1114111 ?
+        do_str2bytes(cps, idx+1, concat(
+            acc,
+            128+64+32+16+rsh(cps[idx],18),
+            128+bittrunc(rsh(cps[idx],12),6),
+            128+bittrunc(rsh(cps[idx],6),6),
+            128+bittrunc(cps[idx],6)
+        )) :
+    undef;
+
+// UTF-8 encodes the result of str2codepts
+function str2bytes(s) =
+    do_str2bytes(str2codepts(s));
+
+function str2codepts(s) = [ for(i=s) ord(i) ];
+
+function bytes2bits(bytes) = [ for(i=[0:len(bytes)*8-1]) is_bit_set(bytes[floor(i/8)], i) ? 1 : 0 ];
+
+// Pads not fully filled bytes with 0s
+function bits2bytes(bits) = [ for(i=[0:ceil(len(bits)/8)-1]) bits2byte([
+    for(j=[0:8-1])
+        let(bitidx=8*i + j)
+        bitidx < len(bits) ? bits[bitidx] : 0
+    ]) ];
+
+// Galois field 256 exponentiation table
+gf256_exp = [
+    1,2,4,8,16,32,64,128,29,58,116,232,205,135,19,38,
+    76,152,45,90,180,117,234,201,143,3,6,12,24,48,96,192,
+    157,39,78,156,37,74,148,53,106,212,181,119,238,193,159,35,
+    70,140,5,10,20,40,80,160,93,186,105,210,185,111,222,161,
+    95,190,97,194,153,47,94,188,101,202,137,15,30,60,120,240,
+    253,231,211,187,107,214,177,127,254,225,223,163,91,182,113,226,
+    217,175,67,134,17,34,68,136,13,26,52,104,208,189,103,206,
+    129,31,62,124,248,237,199,147,59,118,236,197,151,51,102,204,
+    133,23,46,92,184,109,218,169,79,158,33,66,132,21,42,84,
+    168,77,154,41,82,164,85,170,73,146,57,114,228,213,183,115,
+    230,209,191,99,198,145,63,126,252,229,215,179,123,246,241,255,
+    227,219,171,75,150,49,98,196,149,55,110,220,165,87,174,65,
+    130,25,50,100,200,141,7,14,28,56,112,224,221,167,83,166,
+    81,162,89,178,121,242,249,239,195,155,43,86,172,69,138,9,
+    18,36,72,144,61,122,244,245,247,243,251,235,203,139,11,22,
+    44,88,176,125,250,233,207,131,27,54,108,216,173,71,142,1
+];
+
+// Galois field 256 log table
+gf256_log = [
+    undef,0,1,25,2,50,26,198,3,223,51,238,27,104,199,75,
+    4,100,224,14,52,141,239,129,28,193,105,248,200,8,76,113,
+    5,138,101,47,225,36,15,33,53,147,142,218,240,18,130,69,
+    29,181,194,125,106,39,249,185,201,154,9,120,77,228,114,166,
+    6,191,139,98,102,221,48,253,226,152,37,179,16,145,34,136,
+    54,208,148,206,143,150,219,189,241,210,19,92,131,56,70,64,
+    30,66,182,163,195,72,126,110,107,58,40,84,250,133,186,61,
+    202,94,155,159,10,21,121,43,78,212,229,172,115,243,167,87,
+    7,112,192,247,140,128,99,13,103,74,222,237,49,197,254,24,
+    227,165,153,119,38,184,180,124,17,68,146,217,35,32,137,46,
+    55,63,209,91,149,188,207,205,144,135,151,178,220,252,190,97,
+    242,86,211,171,20,42,93,158,132,60,57,83,71,109,65,162,
+    31,45,67,216,183,123,164,118,196,23,73,236,127,12,111,246,
+    108,161,59,82,41,157,85,170,251,96,134,177,187,204,62,90,
+    203,89,95,176,156,169,160,81,11,245,22,235,122,117,44,215,
+    79,174,213,233,230,231,173,232,116,214,244,234,168,80,88,175
+];
+
+// Form is gp[0]*x^0...gp[n]*x^n (gp[i] is this constant at index i)
+// Generator polynomials for EC codewords - only versions 1-3 needed
+generator_polynomials = [
+    [], [], [], [], [], [], [],
+    [127, 122, 154, 164, 11, 68, 117], // 7 - V1
+    [], [],
+    [216, 194, 159, 111, 199, 94, 95, 113, 157, 193], // 10 - V2
+    [],
+    [], [],
+    [],
+    [29, 196, 111, 163, 112, 74, 10, 105, 105, 139, 132, 151, 32, 134, 26], // 15 - V3L
+    [59, 13, 104, 189, 68, 209, 30, 8, 163, 65, 41, 229, 98, 50, 36, 59], // 16 - V2M
+    [119, 66, 83, 120, 119, 22, 197, 83, 249, 41, 143, 134, 85, 53, 125, 99, 79], // 17 - V1Q
+    [239, 251, 183, 113, 149, 175, 199, 215, 240, 220, 73, 82, 173, 75, 32, 67, 217, 146], // 18 - V3M
+    [],
+    [],
+    [],
+    [89, 179, 131, 176, 182, 244, 19, 189, 69, 40, 28, 137, 29, 123, 67, 253, 86, 218, 230, 26, 145, 245], // 22 - V2,3Q
+    [],
+    [],
+    [],
+    [246, 51, 183, 4, 136, 98, 199, 152, 77, 56, 206, 24, 145, 40, 209, 117, 233, 42, 135, 68, 70, 144, 146, 77, 43, 94], // 26 - V3M
+    [],
+    [252, 9, 28, 13, 18, 251, 208, 150, 103, 174, 100, 41, 167, 12, 247, 56, 117, 119, 233, 127, 181, 100, 121, 147, 176, 74, 58, 197] // 28 - V2H
+];
+
+fmtinf_strs = [
+    [1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0],
+    [1, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 1],
+    [1, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0],
+    [1, 0, 1, 1, 0, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1],
+    [1, 0, 0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 0, 0, 1],
+    [1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 0],
+    [1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1, 0, 1, 1, 1],
+    [1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0],
+    [1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0],
+    [1, 1, 1, 0, 0, 1, 0, 1, 1, 1, 1, 0, 0, 1, 1],
+    [1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1, 0],
+    [1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 1, 1, 1, 0, 1],
+    [1, 1, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 1, 1],
+    [1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0],
+    [1, 1, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1],
+    [1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 1, 0, 1, 1, 0],
+    [0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 0, 1, 0, 0, 1],
+    [0, 0, 1, 0, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0],
+    [0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1],
+    [0, 0, 1, 1, 0, 0, 1, 1, 1, 0, 1, 0, 0, 0, 0],
+    [0, 0, 0, 0, 1, 1, 1, 0, 1, 1, 0, 0, 0, 1, 0],
+    [0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1],
+    [0, 0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0],
+    [0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 1, 1],
+    [0, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1],
+    [0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0],
+    [0, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 0, 1],
+    [0, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0],
+    [0, 1, 0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0],
+    [0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1],
+    [0, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 0],
+    [0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1]
+];
+
+// EC table for versions 1-3 only (supports L and M for shortened URLs)
+ectab = [
+    [ // Version 1
+        [19, 7, 1, 19, 0, 0],
+        [16, 10, 1, 16, 0, 0],
+        [13, 13, 1, 13, 0, 0],
+        [9, 17, 1, 9, 0, 0]
+    ],
+    [ // Version 2
+        [34, 10, 1, 34, 0, 0],
+        [28, 16, 1, 28, 0, 0],
+        [22, 22, 1, 22, 0, 0],
+        [16, 28, 1, 16, 0, 0]
+    ],
+    [ // Version 3
+        [55, 15, 1, 55, 0, 0],
+        [44, 26, 1, 44, 0, 0],
+        [34, 18, 2, 17, 0, 0],
+        [26, 22, 2, 13, 0, 0]
+    ]
+];
