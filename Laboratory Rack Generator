@@ -1,0 +1,206 @@
+// Laboratory Reagent Rack Generator v1.0
+// Customizable rack system for vials, test tubes, and laboratory supplies
+// Created by Oohhddaanngg (MTin3D)
+// Date: 2025
+
+/* [Rack Style] */
+// Choose between solid stepped design or frame with removable plates
+rack_style = "Solid Stepped"; // [Solid Stepped, Frame with Plates]
+
+/* [Container Specifications] */
+// Inner diameter of vials/tubes in mm
+container_diameter = 12.0; // [10.0:0.5:30.0]
+// Extra clearance around each container for easy removal
+clearance = 0.8; // [0:0.1:2]
+// Depth of holes (0 = through all)
+hole_depth = 0; // [0:50]
+
+/* [Grid Configuration] */
+// Type of openings in the rack
+opening_type = "Holes"; // [Holes, Slots, Mixed]
+// For gel cards - width of slot in mm
+slot_width = 55; // [40:80]
+// For gel cards - depth of slot in mm  
+slot_depth = 8; // [5:15]
+// Number of holes across (X direction)
+grid_columns = 10; // [1:20]
+// Number of holes deep (Y direction)  
+grid_rows = 6; // [1:15]
+// Rows for holes in Mixed mode
+hole_rows_mixed = 4; // [1:15]
+// Rows for slots in Mixed mode  
+slot_rows_mixed = 2; // [1:15]
+// Minimum wall thickness between holes
+wall_thickness = 3.0; // [3.0:0.1:9.0]
+
+/* [Tier Configuration] */
+// Number of tier levels
+tier_count = 3; // [1:5]
+// Vertical spacing between tiers
+tier_spacing = 32; // [20:60]
+// Step back distance for each tier (Solid style only)
+tier_step_back = 25; // [15:40]
+
+/* [Frame Dimensions - Frame Style Only] */
+// Thickness of frame material
+frame_thickness = 5; // [3:10]
+// Depth of slide-in grooves
+groove_depth = 3; // [2:5]
+// Width of slide-in grooves (should be slightly larger than plate thickness)
+groove_width = 5.2; // [3:10]
+
+/* [Plate Dimensions] */
+// Thickness of rack plates
+plate_thickness = 5; // [3:10]
+// Extra material around the hole grid
+plate_border = 5; // [3:15]
+
+/* [Advanced Options] */
+// Base thickness (bottom of holes)
+base_thickness = 3; // [2:10]
+// Add drainage slots between holes
+drainage_slots = false;
+// Add back wall to rack
+back_wall = false;
+// Height of back wall if enabled
+back_wall_height = 50; // [30:100]
+
+/* [Export Options] */
+// What to generate
+export_part = "Complete Assembly"; // [Complete Assembly, Plate Only, Frame Only, All Parts Separated]
+// Which tier to export (for Plate Only option)
+export_tier_number = 1; // [1:5]
+
+// Calculated values (not shown in customizer)
+actual_hole_diameter = container_diameter + clearance;
+hole_spacing = actual_hole_diameter + wall_thickness;
+slot_spacing_x = slot_width + wall_thickness;
+slot_spacing_y = slot_depth + wall_thickness;
+
+// Determine actual rows based on mode
+actual_hole_rows = opening_type == "Mixed" ? hole_rows_mixed : grid_rows;
+actual_slot_rows = opening_type == "Mixed" ? slot_rows_mixed : grid_rows;
+total_rows = opening_type == "Mixed" ? hole_rows_mixed + slot_rows_mixed : grid_rows;
+
+// Adjust plate dimensions based on opening type
+plate_width = opening_type == "Slots" ? 
+    (grid_columns * slot_spacing_x) + (2 * plate_border) :
+    opening_type == "Mixed" && slot_width > container_diameter ?
+    max((grid_columns * slot_spacing_x) + (2 * plate_border), 
+        (grid_columns * hole_spacing) + (2 * plate_border)) :
+    (grid_columns * hole_spacing) + (2 * plate_border);
+    
+plate_depth = opening_type == "Slots" ? 
+    (actual_slot_rows * slot_spacing_y) + (2 * plate_border) :
+    opening_type == "Mixed" ?
+    (actual_hole_rows * hole_spacing) + (actual_slot_rows * slot_spacing_y) + (2 * plate_border) :
+    (grid_rows * hole_spacing) + (2 * plate_border);
+
+// Module to create hole grid pattern
+module hole_grid() {
+    if (opening_type == "Holes") {
+        // Just holes - centered
+        holes_width = (grid_columns - 1) * hole_spacing + actual_hole_diameter;
+        holes_depth = (grid_rows - 1) * hole_spacing + actual_hole_diameter;
+        offset_x = (plate_width - holes_width) / 2;
+        offset_y = (plate_depth - holes_depth) / 2;
+        
+        for (x = [0:grid_columns-1]) {
+            for (y = [0:grid_rows-1]) {
+                translate([
+                    offset_x + (x * hole_spacing) + (actual_hole_diameter/2),
+                    offset_y + (y * hole_spacing) + (actual_hole_diameter/2),
+                    -0.1
+                ])
+                cylinder(
+                    h = hole_depth > 0 ? hole_depth + 0.1 : plate_thickness + 0.2,
+                    d = actual_hole_diameter,
+                    $fn = 32
+                );
+            }
+        }
+    } else if (opening_type == "Slots") {
+        // Just slots - centered
+        slots_width = (grid_columns - 1) * slot_spacing_x + slot_width;
+        slots_depth = (actual_slot_rows - 1) * slot_spacing_y + slot_depth;
+        offset_x = (plate_width - slots_width) / 2;
+        offset_y = (plate_depth - slots_depth) / 2;
+        
+        for (x = [0:grid_columns-1]) {
+            for (y = [0:actual_slot_rows-1]) {
+                translate([
+                    offset_x + (x * slot_spacing_x) + (slot_width/2),
+                    offset_y + (y * slot_spacing_y) + (slot_depth/2),
+                    -0.1
+                ])
+                translate([-slot_width/2, -slot_depth/2, 0])
+                cube([
+                    slot_width,
+                    slot_depth,
+                    hole_depth > 0 ? hole_depth + 0.1 : plate_thickness + 0.2
+                ]);
+            }
+        }
+    } else if (opening_type == "Mixed") {
+        // Mixed mode - holes then slots
+        holes_width = (grid_columns - 1) * hole_spacing + actual_hole_diameter;
+        slots_width = (grid_columns - 1) * slot_spacing_x + slot_width;
+        holes_depth = (actual_hole_rows - 1) * hole_spacing + actual_hole_diameter;
+        slots_depth = (actual_slot_rows - 1) * slot_spacing_y + slot_depth;
+        
+        // Center based on widest element
+        offset_x_holes = (plate_width - holes_width) / 2;
+        offset_x_slots = (plate_width - slots_width) / 2;
+        
+        // Stack vertically with even spacing
+        total_used_depth = holes_depth + slots_depth + wall_thickness;
+        start_offset_y = (plate_depth - total_used_depth) / 2;
+        
+        // Draw holes
+        for (x = [0:grid_columns-1]) {
+            for (y = [0:actual_hole_rows-1]) {
+                translate([
+                    offset_x_holes + (x * hole_spacing) + (actual_hole_diameter/2),
+                    start_offset_y + (y * hole_spacing) + (actual_hole_diameter/2),
+                    -0.1
+                ])
+                cylinder(
+                    h = hole_depth > 0 ? hole_depth + 0.1 : plate_thickness + 0.2,
+                    d = actual_hole_diameter,
+                    $fn = 32
+                );
+            }
+        }
+        
+        // Draw slots
+        for (x = [0:grid_columns-1]) {
+            for (y = [0:actual_slot_rows-1]) {
+                translate([
+                    offset_x_slots + (x * slot_spacing_x) + (slot_width/2),
+                    start_offset_y + holes_depth + wall_thickness + (y * slot_spacing_y) + (slot_depth/2),
+                    -0.1
+                ])
+                translate([-slot_width/2, -slot_depth/2, 0])
+                cube([
+                    slot_width,
+                    slot_depth,
+                    hole_depth > 0 ? hole_depth + 0.1 : plate_thickness + 0.2
+                ]);
+            }
+        }
+    }
+}
+
+// Module to create a single rack plate with holes
+module rack_plate() {
+    difference() {
+        // Base plate
+        cube([plate_width, plate_depth, plate_thickness]);
+        
+        // Subtract holes
+        hole_grid();
+    }
+}
+
+// Test the rack plate module
+rack_plate();
