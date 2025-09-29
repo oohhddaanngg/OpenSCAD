@@ -1,5 +1,7 @@
-// Lab Rack Generator v2.9 — Spherical cups with correct orientation
-// Fixed: Flipped plate orientation so cups face upward
+// Lab Rack Generator v2.11 — soft externals + rounded hole entry + micro rim break
+// - Cups: unchanged approach (carve from bottom, then flip plate) to ensure cups face upward
+// - External edges: Minkowski fillet on base solids only, then subtract features
+// - Holes: optional Rounded (stepped) lead-in at top; plus tiny outer rim break (micro-chamfer)
 
 $fn = 64; $fa = 6; $fs = 0.8;
 
@@ -10,6 +12,9 @@ rack_family = "12x75 Test Tube Rack"; // [12x75 Test Tube Rack, Antisera Rack]
 plate_width       = 126.8;
 plate_depth       = 255.8;
 plate_thickness   = 5.0;    // [3:10]
+
+/* [Edge Finish] */
+edge_radius = 0.4;   // [0:0.1:1.0] external fillet on plates & end piece (mm)
 
 /* [Borders] */
 border_left_center   = 12.40;
@@ -24,17 +29,27 @@ wall_thickness = 3.0;  // [3.0:0.1:9.0]
 
 /* [Plate – Holes] */
 holes_leadin       = "On"; // [On, Off]
+lead_in_profile    = "Conical (fast)"; // [Conical (fast), Rounded (stepped)]
+lead_in_steps      = 10;   // [6:1:20] only for Rounded (stepped)
 container_diameter = 12.8;
 clearance_extra    = 0.0;
 lead_in_height     = 1.8;  // [0:0.2:3]
 lead_in_factor     = 1.6;  // [1.0:0.05:2.4]
+
+/* Hole top rim micro-break (independent of main lead-in) */
+hole_outer_break_enable = true;
+hole_outer_break_height = 0.35;  // [0:0.05:0.6] height of micro-chamfer
+hole_outer_break_extra  = 0.6;   // [0:0.1:1.2] added DIAMETER at the very top (tapers to 0)
 
 /* [Plate – Cups] */
 cup_depth        = 4.0;
 cup_floor_min    = 1.0;
 cup_drain_enable = false;
 cup_drain_diam   = 1.0;
-cup_diameter_ratio = 0.85; // [0.7:0.05:0.95] Ratio of cup diameter to hole diameter
+
+/* Rim control for cups */
+cup_rim_mode       = "Ratio";   // [Match holes, Ratio]
+cup_diameter_ratio = 0.85;      // [0.7:0.05:0.95] used only when mode == Ratio
 
 /* [End Piece (Press-fit)] */
 pf_cheek_thickness = 8.0;
@@ -66,12 +81,19 @@ lead_in_on    = (holes_leadin == "On");
 lead_in_radius = lead_in_on ? (actual_hole_d*(lead_in_factor-1)/2) : 0;
 
 module warn(m){ echo(str("[WARN] ", m)); }
-if (cup_floor_min < 1.5) warn("cup_floor_min is thin; consider ≥1.5–2.0 mm.");
-if (plate_thickness <= cup_depth) warn("plate_thickness must be > cup_depth.");
+if (cup_floor_min < 1.0) warn("cup_floor_min is thin; consider ≥1.5–2.0 mm.");
+// Floor-safety guard for cups
+if (cup_depth > (plate_thickness - cup_floor_min))
+    warn("cup_depth exceeds allowed depth; would violate cup_floor_min.");
 
-function _min_border_needed() = pf_visible_overlap + 1.2 + lead_in_radius;
-if (border_left_center  < _min_border_needed())  warn(str("Left border too small; need ≥ ", _min_border_needed()));
-if (border_right_center < _min_border_needed())  warn(str("Right border too small; need ≥ ", _min_border_needed()));
+// Lead-in guard vs wall thickness
+_leadin_r_add = (holes_leadin=="On") ? (actual_hole_d*(lead_in_factor-1)/2) : 0;
+if (_leadin_r_add > wall_thk/2)
+    warn("Lead-in too aggressive for wall_thickness; rims may merge. Reduce lead_in_factor or increase wall_thickness.");
+
+// Outer break guard (keep reasonable against wall thickness)
+if (hole_outer_break_enable && hole_outer_break_extra > max(0.0, wall_thk-0.4))
+    warn("hole_outer_break_extra may be large vs wall_thickness; consider reducing.");
 
 // ---------- Symmetry handling ----------
 function _L() = border_left_center;
@@ -96,63 +118,109 @@ function _y0() = (lock_symmetry=="On") ? (_T() + _slack_y()/2 + actual_hole_d/2)
 function cx(ix) = _x0() + ix*_pitch_h();
 function cy(iy) = _y0() + iy*_pitch_h();
 
-// ---------- primitives ----------
-module hole_at(xc,yc){
-    translate([xc,yc,-0.1]) cylinder(h=plate_thickness+0.4, d=actual_hole_d);
-    if (lead_in_on)
-        translate([xc,yc,plate_thickness - lead_in_height + 0.1])
-            cylinder(h=lead_in_height, d1=actual_hole_d*lead_in_factor, d2=actual_hole_d);
+/* --- Rounded externals (keeps original size) --- */
+module rounded_block(w,d,h,r){
+    R = (r>0) ? min(r, 0.49*min(w,d,h)) : 0;
+    if (R <= 0) cube([w,d,h]);
+    else
+        minkowski() {
+            translate([R,R,R]) cube([w-2*R, d-2*R, h-2*R]);
+            sphere(r=R, $fn=36);
+        }
 }
 
-// Spherical cup carved from bottom (then entire plate flipped)
+// ---------- primitives & helpers ----------
+
+// Rounded (spherical) lead-in at the TOP face, approximated by stacked frustums
+module hole_leadin_rounded(xc, yc, h, d_base, d_top, steps){
+    r_t = d_top/2;
+    r_b = d_base/2;
+    zc = (r_b*r_b - r_t*r_t + h*h)/(2*h);
+    R  = sqrt(max(0, r_t*r_t + zc*zc));
+    dz = h/steps;
+    for (i=[0:steps-1]){
+        z0 = i*dz;  z1 = (i+1)*dz;
+        r0 = sqrt(max(0, R*R - (z0 - zc)*(z0 - zc)));
+        r1 = sqrt(max(0, R*R - (z1 - zc)*(z1 - zc)));
+        translate([xc, yc, plate_thickness - h + z0])
+            cylinder(h=(z1-z0)+0.0005, d1=2*r1, d2=2*r0, $fn=max(36, ceil($fn*0.75)));
+    }
+}
+
+// Tiny outer rim break (micro-chamfer) at the very top edge of the hole
+module hole_outer_break(xc, yc){
+    if (hole_outer_break_enable && hole_outer_break_height>0 && hole_outer_break_extra>0){
+        translate([xc, yc, plate_thickness - hole_outer_break_height + 0.05])
+            cylinder(h=hole_outer_break_height, 
+                     d1=actual_hole_d, 
+                     d2=actual_hole_d + hole_outer_break_extra,
+                     $fn=max(48,$fn)); // subtract to widen just at the top
+    }
+}
+
+// Through-hole + optional top lead-in + optional outer rim break
+module hole_at(xc,yc){
+    // Through hole
+    translate([xc,yc,-0.1]) cylinder(h=plate_thickness+0.4, d=actual_hole_d);
+
+    // Lead-in (internal, top-anchored)
+    if (holes_leadin=="On" && lead_in_height>0){
+        d_top = actual_hole_d*lead_in_factor;
+        if (lead_in_profile == "Conical (fast)"){
+            translate([xc,yc,plate_thickness - lead_in_height + 0.1])
+                cylinder(h=lead_in_height, d1=d_top, d2=actual_hole_d);
+        } else { // "Rounded (stepped)"
+            hole_leadin_rounded(xc, yc, lead_in_height, actual_hole_d, d_top, lead_in_steps);
+        }
+    }
+
+    // Outer rim micro-chamfer (very top edge), independent of the lead-in
+    hole_outer_break(xc, yc);
+}
+
+// --- Cup rim diameter selection ---
+function _cup_rim_d() =
+    (cup_rim_mode == "Match holes") ? actual_hole_d : (actual_hole_d * cup_diameter_ratio);
+
+// --- Cup subtractor (carve from bottom, then plate is flipped) ---
 module cup_spherical_at(xc, yc) {
-    h_req = cup_depth;
-    h_max = max(0.1, plate_thickness - cup_floor_min);
-    h_eff = min(h_req, h_max);
-    
-    if (h_eff < 0.3) warn(str("cup depth very shallow (", h_eff, " mm)."));
-    
-    // Cup opening diameter
-    Ds = actual_hole_d * cup_diameter_ratio;
-    
-    // Calculate sphere radius
+    h_eff = min(cup_depth, max(0.1, plate_thickness - cup_floor_min));
+    Ds = _cup_rim_d();
     R = (h_eff*h_eff + (Ds/2)*(Ds/2)) / (2*h_eff);
-    
     if (is_undef(R) || R <= 0) warn("Invalid sphere radius for cup.");
-    
-    // Position sphere to carve from bottom surface (before flip)
-    z_sphere_center = h_eff - R;
-    
-    // Create the spherical depression
-    translate([xc, yc, z_sphere_center]) 
-        sphere(r = R, $fn = floor(96 * cup_diameter_ratio));
-    
-    // Optional drain hole
+
+    // Anti-coplanar epsilon so tangent ring isn't exactly coplanar with a plate face
+    eps_cup = 0.05; // 50 µm
+
+    // Position sphere so it carves from the bottom (pre-flip); tiny offset downward
+    z_sphere_center = (h_eff - R) - eps_cup;
+
+    // Spherical depression
+    translate([xc, yc, z_sphere_center])
+        sphere(r = R, $fn = 96);
+
+    // Optional straight drain
     if (cup_drain_enable)
-        translate([xc, yc, -0.2]) 
+        translate([xc, yc, -0.2])
             cylinder(h = plate_thickness + 0.6, d = cup_drain_diam, $fn = 32);
 }
 
 // ---------- plates ----------
 module plate_holes(){
     difference(){
-        cube([plate_width, plate_depth, plate_thickness]);
+        rounded_block(plate_width, plate_depth, plate_thickness, edge_radius);
         for (ix=[0:_cols()-1]) for (iy=[0:_rows()-1]) hole_at(cx(ix), cy(iy));
     }
 }
 
 // Plate with spherical cups - built upside down then flipped
 module plate_cups() {
-    // Flip the entire plate so cups face upward
-    translate([0, plate_depth, 0]) 
+    // Flip the entire plate so cups face upward in all viewers/slicers
+    translate([0, plate_depth, 0])
     rotate([180, 0, 0])
     difference() {
-        cube([plate_width, plate_depth, plate_thickness]);
-        for (ix=[0:_cols()-1]) {
-            for (iy=[0:_rows()-1]) {
-                cup_spherical_at(cx(ix), cy(iy));
-            }
-        }
+        rounded_block(plate_width, plate_depth, plate_thickness, edge_radius);
+        for (ix=[0:_cols()-1]) for (iy=[0:_rows()-1]) cup_spherical_at(cx(ix), cy(iy));
     }
 }
 
@@ -166,11 +234,13 @@ module end_piece(){
     cheek_d = pf_pocket_depth + pf_visible_overlap;
     cheek_h = _stack_height_2tiers();
     difference(){
-        cube([cheek_w, cheek_d, cheek_h]);
+        rounded_block(cheek_w, cheek_d, cheek_h, edge_radius);
+        // lower pocket (cups plate)
         translate([0, pf_visible_overlap, pf_bottom_foot])
-            cube([cheek_w+0.1, _pocket_w(), _pocket_h()+0.02]); // lower pocket (cups plate)
+            cube([cheek_w+0.1, _pocket_w(), _pocket_h()+0.02]);
+        // upper pocket (holes plate)
         translate([0, pf_visible_overlap, pf_bottom_foot + plate_thickness + pf_tier_spacing])
-            cube([cheek_w+0.1, _pocket_w(), _pocket_h()+0.02]); // upper pocket (holes plate)
+            cube([cheek_w+0.1, _pocket_w(), _pocket_h()+0.02]);
     }
 }
 
@@ -210,11 +280,16 @@ if (rack_family == "12x75 Test Tube Rack"){
     else { warn(str("Unknown export_part for Antisera: ", export_part, " — defaulting to Antisera Rack (all flat).")); layout_antisera_flat(); }
 }
 
-// Echo design info
+// ---------- diagnostics ----------
+h_eff_dbg = min(cup_depth, max(0.1, plate_thickness - cup_floor_min));
+cup_rim_dbg = _cup_rim_d();
 echo("=== Test Tube Rack Configuration ===");
 echo(str("Grid: ", _cols(), " x ", _rows(), " = ", _cols()*_rows(), " positions"));
 echo(str("Plate size: ", plate_width, " x ", plate_depth, " x ", plate_thickness, " mm"));
 echo(str("Hole diameter: ", actual_hole_d, " mm"));
-echo(str("Cup depth: ", min(cup_depth, plate_thickness - cup_floor_min), " mm effective"));
-echo(str("Cup diameter: ", actual_hole_d * cup_diameter_ratio, " mm"));
-echo(str("Sphere radius: ", (cup_depth*cup_depth + (actual_hole_d*cup_diameter_ratio/2)*(actual_hole_d*cup_diameter_ratio/2)) / (2*cup_depth), " mm"));
+echo(str("Lead-in: ", holes_leadin, " (", lead_in_profile, "), height=", lead_in_height, " mm"));
+echo(str("Outer rim break: ", hole_outer_break_enable ? "On" : "Off", 
+         " (h=", hole_outer_break_height, " mm, +", hole_outer_break_extra, " mm @ top)"));
+echo(str("Cup depth (effective): ", h_eff_dbg, " mm"));
+echo(str("Cup rim diameter (actual): ", cup_rim_dbg, " mm"));
+echo(str("Cup sphere radius: ", (h_eff_dbg*h_eff_dbg + (cup_rim_dbg/2)*(cup_rim_dbg/2)) / (2*h_eff_dbg), " mm"));
